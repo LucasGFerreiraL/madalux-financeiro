@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Madalux — Gestão Financeira Exclusiva</title>
+    
+    <!-- Tailwind CSS & Plugins -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Configuração de Identidade Visual -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        madalux: {
+                            navy: '#101C2C',
+                            graphite: '#202B3A',
+                            gold: '#D4B16A',
+                            emerald: '#087F5B',
+                            light: '#F3F5F7'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Estilos Customizados (Glassmorphism e Privacidade) -->
+    <style>
+        body { font-family: 'Inter', sans-serif; transition: background-color 0.3s, color 0.3s; }
+        
+        /* Glassmorphism Panels */
+        .glass-panel { 
+            background: rgba(32, 43, 58, 0.7); 
+            backdrop-filter: blur(12px); 
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(212, 177, 106, 0.15); 
+        }
+        .light .glass-panel { 
+            background: rgba(255, 255, 255, 0.8); 
+            border: 1px solid rgba(0, 0, 0, 0.05); 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); 
+        }
+        
+        /* Ocultar valores privados */
+        .privacy-on .financial-value { 
+            filter: blur(6px); 
+            opacity: 0.8;
+            user-select: none; 
+            pointer-events: none;
+        }
+
+        /* Scrollbar customizada */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(212, 177, 106, 0.3); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(212, 177, 106, 0.6); }
+
+        /* IA Chat Balões */
+        .chat-user { background: #D4B16A; color: #101C2C; border-radius: 16px 16px 0 16px; }
+        .chat-ai { background: #202B3A; color: #e5e7eb; border: 1px solid rgba(212, 177, 106, 0.2); border-radius: 16px 16px 16px 0; }
+        .light .chat-ai { background: #f3f4f6; color: #111827; border-color: #e5e7eb; }
+    </style>
+</head>
+<body class="bg-madalux-light dark:bg-madalux-navy text-gray-900 dark:text-gray-100 min-h-screen flex overflow-hidden selection:bg-madalux-gold selection:text-madalux-navy">
+
+    <!-- MENU LATERAL (DESKTOP) -->
+    <aside class="w-64 hidden md:flex flex-col justify-between glass-panel border-r border-madalux-gold/20 z-20 h-screen transition-all">
+        <div>
+            <!-- Logomarca Oficial Madalux -->
+            <div class="p-6 flex items-center justify-center border-b border-madalux-gold/10">
+                <img src="https://storage.googleapis.com/generative-ai/images/Emblema%20Dourado%20Abstrato%20em%20Fundo%20Negro.png" alt="Madalux Logo" class="h-14 object-contain drop-shadow-[0_0_10px_rgba(212,177,106,0.2)]">
+            </div>
+            
+            <nav class="p-4 space-y-1 mt-2 overflow-y-auto">
+                <button onclick="changeTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center space-x-3 p-3 rounded-xl bg-madalux-gold/10 text-madalux-gold transition-all text-left font-medium text-sm">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5"></i><span>Dashboard</span>
+                </button>
+                <button onclick="changeTab('contas')" id="nav-contas" class="nav-btn w-full flex items-center space-x-3 p-3 rounded-xl text-gray-400 hover:text-madalux-gold hover:bg-madalux-gold/5 transition-all text-left font-medium text-sm">
+                    <i data-lucide="landmark" class="w-5 h-5"></i><span>Contas e Bancos</span>
+                </button>
+                <button onclick="changeTab('mercado')" id="nav-mercado" class="nav-btn w-full flex items-center space-x-3 p-3 rounded-xl text-gray-400 hover:text-madalux-gold hover:bg-madalux-gold/5 transition-all text-left font-medium text-sm">
+                    <i data-lucide="trending-up" class="w-5 h-5"></i><span>Mercado & Bolsas</span>
+                </button>
+                <button onclick="changeTab('metas')" id="nav-metas" class="nav-btn w-full flex items-center space-x-3 p-3 rounded-xl text-gray-400 hover:text-madalux-gold hover:bg-madalux-gold/5 transition-all text-left font-medium text-sm">
+                    <i data-lucide="target" class="w-5 h-5"></i><span>Metas Financeiras</span>
+                </button>
+                <button onclick="changeTab('relatorios')" id="nav-relatorios" class="nav-btn w-full flex items-center space-x-3 p-3 rounded-xl text-gray-400 hover:text-madalux-gold hover:bg-madalux-gold/5 transition-all text-left font-medium text-sm">
+                    <i data-lucide="pie-chart" class="w-5 h-5"></i><span>Relatórios</span>
+                </button>
+                <button onclick="changeTab('ia')" id="nav-ia" class="nav-btn w-full flex items-center space-x-3 p-3 rounded-xl text-gray-400 hover:text-madalux-gold hover:bg-madalux-gold/5 transition-all text-left font-medium text-sm">
+                    <i data-lucide="bot" class="w-5 h-5"></i><span>Consultor IA (PRO)</span>
+                </button>
+                <button onclick="changeTab('admin')" id="nav-admin" class="nav-btn w-full flex items-center space-x-3 p-3 rounded-xl text-gray-400 hover:text-madalux-gold hover:bg-madalux-gold/5 transition-all text-left font-medium text-sm">
+                    <i data-lucide="shield-check" class="w-5 h-5"></i><span>Administração</span>
+                </button>
+            </nav>
+        </div>
+        
+        <div class="p-4 border-t border-madalux-gold/10 space-y-2">
+            <!-- Botão PWA -->
+            <button onclick="alert('Funcionalidade PWA: O prompt de instalação nativa do sistema operacional seria acionado aqui.')" class="w-full flex items-center justify-center space-x-2 p-2.5 rounded-xl bg-madalux-gold/10 border border-madalux-gold/30 text-madalux-gold hover:bg-madalux-gold hover:text-madalux-navy transition-all">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span class="text-sm font-semibold">Instalar App</span>
+            </button>
+            <button onclick="toggleTheme()" class="w-full flex items-center space-x-3 p-3 rounded-xl text-gray-400 hover:text-madalux-gold transition-all text-left text-sm">
+                <i data-lucide="moon" id="theme-icon" class="w-5 h-5"></i><span id="theme-text">Modo Claro</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="flex-1 flex flex-col h-screen overflow-y-auto relative">
+        
+        <!-- CABEÇALHO -->
+        <header class="p-4 md:p-6 flex justify-between items-center glass-panel border-b border-madalux-gold/10 z-10 sticky top-0">
+            <div class="flex items-center space-x-3">
+                <!-- Mobile Menu Button -->
+                <button onclick="toggleMobileMenu()" class="md:hidden p-2 text-madalux-gold hover:bg-madalux-gold/10 rounded-lg">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
+                <img src="https://storage.googleapis.com/generative-ai/images/Emblema%20Dourado%20Abstrato%20em%20Fundo%20Negro.png" alt="Madalux Logo" class="h-8 md:hidden object-contain">
+                <div class="hidden md:block">
+                    <h1 class="text-xl md:text-2xl font-bold text-madalux-gold tracking-tight" id="page-title">Dashboard Executivo</h1>
+                    <p class="text-xs text-gray-400">Inteligência Patrimonial Madalux</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-3 md:space-x-4">
+                <button onclick="togglePrivacy()" class="p-2 rounded-full bg-madalux-graphite border border-madalux-gold/20 text-madalux-gold hover:bg-madalux-gold/20 transition-all shadow-lg" title="Modo Privacidade">
+                    <i data-lucide="eye" id="privacy-icon" class="w-5 h-5"></i>
+                </button>
+                <div class="w-9 h-9 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-madalux-navy to-madalux-graphite border border-madalux-gold/50 flex items-center justify-center overflow-hidden shadow-lg">
+                    <img src="https://storage.googleapis.com/generative-ai/images/Emblema%20Dourado%20Abstrato%20em%20Fundo%20Negro.png" alt="User" class="h-5 object-contain">
+                </div>
+            </div>
+        </header>
+
+        <!-- SECTIONS CONTAINER -->
+        <div class="p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full pb-24 md:pb-8" id="main-content">
+            
+            <!-- 1. DASHBOARD -->
+            <section id="tab-dashboard" class="tab-section space-y-6">
+                <!-- Cartões Interativos -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                    <div onclick="changeTab('contas')" class="glass-panel p-5 rounded-2xl border border-madalux-gold/20 hover:border-madalux-gold cursor-pointer transition-all group relative overflow-hidden">
+                        <div class="absolute right-0 top-0 w-16 h-16 bg-madalux-gold/5 rounded-bl-full"></div>
+                        <div class="flex justify-between items-start">
+                            <p class="text-gray-400 text-xs font-semibold uppercase tracking-wider">Patrimônio Líquido</p>
+                            <i data-lucide="shield" class="w-4 h-4 text-madalux-gold"></i>
+                        </div>
+                        <h2 class="text-3xl font-bold mt-3 financial-value text-white">R$ 0,00</h2>
+                    </div>
+                    
+                    <div onclick="changeTab('relatorios')" class="glass-panel p-5 rounded-2xl border border-madalux-gold/20 hover:border-madalux-emerald cursor-pointer transition-all group relative overflow-hidden">
+                        <div class="absolute right-0 top-0 w-16 h-16 bg-madalux-emerald/5 rounded-bl-full"></div>
+                        <div class="flex justify-between items-start">
+                            <p class="text-gray-400 text-xs font-semibold uppercase tracking-wider">Receitas do Mês</p>
+                            <i data-lucide="arrow-up-right" class="w-4 h-4 text-madalux-emerald"></i>
+                        </div>
+                        <h2 class="text-3xl font-bold mt-3 financial-value text-madalux-emerald">R$ 0,00</h2>
+                    </div>
+                    
+                    <div onclick="changeTab('relatorios')" class="glass-panel p-5 rounded-2xl border border-madalux-gold/20 hover:border-red-500/50 cursor-pointer transition-all group relative overflow-hidden">
+                        <div class="absolute right-0 top-0 w-16 h-16 bg-red-500/5 rounded-bl-full"></div>
+                        <div class="flex justify-between items-start">
+                            <p class="text-gray-400 text-xs font-semibold uppercase tracking-wider">Despesas do Mês</p>
+                            <i data-lucide="arrow-down-right" class="w-4 h-4 text-red-400"></i>
+                        </div>
+                        <h2 class="text-3xl font-bold mt-3 financial-value text-red-400">R$ 0,00</h2>
+                    </div>
+                    
+                    <div onclick="changeTab('relatorios')" class="glass-panel p-5 rounded-2xl border border-madalux-gold/20 hover:border-blue-400/50 cursor-pointer transition-all group relative overflow-hidden">
+                        <div class="absolute right-0 top-0 w-16 h-16 bg-blue-500/5 rounded-bl-full"></div>
+                        <div class="flex justify-between items-start">
+                            <p class="text-gray-400 text-xs font-semibold uppercase tracking-wider">Resultado Líquido</p>
+                            <i data-lucide="activity" class="w-4 h-4 text-gray-400"></i>
+                        </div>
+                        <h2 class="text-3xl font-bold mt-3 financial-value text-gray-300">R$ 0,00</h2>
+                    </div>
+                </div>
+                
+                <div class="glass-panel p-8 rounded-2xl border border-madalux-gold/10 border-dashed flex flex-col items-center justify-center py-16 text-center">
+                    <div class="w-16 h-16 rounded-full bg-madalux-gold/10 flex items-center justify-center mb-4">
+                        <img src="https://storage.googleapis.com/generative-ai/images/Emblema%20Dourado%20Abstrato%20em%20Fundo%20Negro.png" alt="Icon" class="h-8 opacity-70">
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2">Painel Limpo e Preparado</h3>
+                    <p class="text-sm text-gray-400 max-w-md">O seu sistema encontra-se zerado. Conecte as suas contas no menu "Contas e Bancos" ou registe a sua primeira transação conversando com o Consultor IA.</p>
+                    <div class="mt-6 flex space-x-3">
+                        <button onclick="changeTab('contas')" class="px-5 py-2.5 bg-madalux-gold text-madalux-navy font-bold rounded-xl text-sm hover:bg-yellow-500 transition-all shadow-lg shadow-madalux-gold/20">Configurar Contas</button>
+                        <button onclick="changeTab('ia')" class="px-5 py-2.5 border border-madalux-gold text-madalux-gold font-bold rounded-xl text-sm hover:bg-madalux-gold/10 transition-all">Falar com IA</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. CONTAS E BANCOS -->
+            <section id="tab-contas" class="tab-section hidden space-y-6">
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-white">Contas & Instituições</h2>
+                        <p class="text-xs text-gray-400">Faça a gestão do seu património e liquidez.</p>
+                    </div>
+                    <button onclick="alert('Simulação: Abrindo painel de conexão de APIs Open Finance...')" class="bg-madalux-gold text-madalux-navy px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-yellow-500 transition-all flex items-center justify-center space-x-2 shadow-lg shadow-madalux-gold/20">
+                        <i data-lucide="link" class="w-4 h-4"></i>
+                        <span>Conectar Open Finance</span>
+                    </button>
+                </div>
+                <div class="glass-panel p-6 rounded-2xl border border-dashed border-madalux-gold/20 flex flex-col items-center justify-center py-20 text-center">
+                    <i data-lucide="landmark" class="w-12 h-12 text-madalux-gold/30 mb-4"></i>
+                    <p class="text-sm text-gray-400">Nenhuma conta cadastrada ou sincronizada no momento.</p>
+                </div>
+            </section>
+
+            <!-- 3. MERCADO E BOLSAS (RECUPERADO) -->
+            <section id="tab-mercado" class="tab-section hidden space-y-6">
+                <div>
+                    <h2 class="text-xl font-bold text-white">Mercado Financeiro</h2>
+                    <p class="text-xs text-gray-400">Indicadores e cotações (Simulação Estática).</p>
+                </div>
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Dólar -->
+                    <div class="glass-panel p-5 rounded-2xl border border-madalux-gold/10">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs text-gray-400 font-semibold uppercase">Dólar Comercial</span>
+                            <span class="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded font-bold">-0.45%</span>
+                        </div>
+                        <h3 class="text-xl font-bold text-white">R$ 5,42</h3>
+                    </div>
+                    <!-- Euro -->
+                    <div class="glass-panel p-5 rounded-2xl border border-madalux-gold/10">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs text-gray-400 font-semibold uppercase">Euro</span>
+                            <span class="text-[10px] bg-madalux-emerald/20 text-madalux-emerald px-2 py-0.5 rounded font-bold">+0.12%</span>
+                        </div>
+                        <h3 class="text-xl font-bold text-white">R$ 5,88</h3>
+                    </div>
+                    <!-- Ibovespa -->
+                    <div class="glass-panel p-5 rounded-2xl border border-madalux-gold/10">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs text-gray-400 font-semibold uppercase">Ibovespa</span>
+                            <span class="text-[10px] bg-madalux-emerald/20 text-madalux-emerald px-2 py-0.5 rounded font-bold">+1.20%</span>
+                        </div>
+                        <h3 class="text-xl font-bold text-white">128.450 pts</h3>
+                    </div>
+                    <!-- Selic -->
+                    <div class="glass-panel p-5 rounded-2xl border border-madalux-gold/10">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs text-gray-400 font-semibold uppercase">Taxa Selic</span>
+                            <span class="text-[10px] bg-gray-700 text-gray-300 px-2 py-0.5 rounded font-bold">Mantida</span>
+                        </div>
+                        <h3 class="text-xl font-bold text-white">10,50% a.a.</h3>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. METAS (RECUPERADO) -->
+            <section id="tab-metas" class="tab-section hidden space-y-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-bold text-white">Planejamento de Metas</h2>
+                        <p class="text-xs text-gray-400">Acompanhe seus objetivos de vida.</p>
+                    </div>
+                    <button class="bg-madalux-graphite border border-madalux-gold/30 text-madalux-gold px-3 py-2 rounded-xl text-sm font-medium hover:bg-madalux-gold hover:text-madalux-navy transition-all">
+                        <i data-lucide="plus" class="w-4 h-4 inline-block mr-1"></i>Nova Meta
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Meta 1 -->
+                    <div class="glass-panel p-6 rounded-2xl border border-madalux-gold/20">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="p-2 bg-madalux-gold/10 rounded-lg text-madalux-gold"><i data-lucide="shield-check"></i></div>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Dez 2026</span>
+                        </div>
+                        <h3 class="font-bold text-white mb-1">Reserva de Emergência</h3>
+                        <p class="text-xs text-gray-400 mb-4">Proteção para imprevistos (6 meses de custo)</p>
+                        
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-gray-300">Acumulado: <span class="financial-value font-bold">R$ 0,00</span></span>
+                            <span class="text-madalux-gold font-bold">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-800 rounded-full h-2.5 mb-2 overflow-hidden">
+                            <div class="bg-gradient-to-r from-madalux-gold to-madalux-emerald h-2.5 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <div class="text-[10px] text-gray-500 text-right">Meta: <span class="financial-value">R$ 50.000,00</span></div>
+                    </div>
+                    
+                    <!-- Meta 2 -->
+                    <div class="glass-panel p-6 rounded-2xl border border-madalux-gold/20">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="p-2 bg-madalux-gold/10 rounded-lg text-madalux-gold"><i data-lucide="plane"></i></div>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Jul 2027</span>
+                        </div>
+                        <h3 class="font-bold text-white mb-1">Viagem Internacional</h3>
+                        <p class="text-xs text-gray-400 mb-4">Europa (Família)</p>
+                        
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-gray-300">Acumulado: <span class="financial-value font-bold">R$ 0,00</span></span>
+                            <span class="text-madalux-gold font-bold">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-800 rounded-full h-2.5 mb-2 overflow-hidden">
+                            <div class="bg-gradient-to-r from-madalux-gold to-madalux-emerald h-2.5 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <div class="text-[10px] text-gray-500 text-right">Meta: <span class="financial-value">R$ 35.000,00</span></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. RELATÓRIOS -->
+            <section id="tab-relatorios" class="tab-section hidden space-y-6">
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-white">Análise e Relatórios</h2>
+                        <p class="text-xs text-gray-400">Visão gráfica da sua evolução patrimonial.</p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="alert('Exportando PDF Executivo Madalux...')" class="glass-panel border border-madalux-gold/30 text-madalux-gold px-3 py-2 rounded-xl text-sm font-medium hover:bg-madalux-gold hover:text-madalux-navy transition-all flex items-center">
+                            <i data-lucide="file-text" class="w-4 h-4 mr-2"></i> PDF
+                        </button>
+                        <button onclick="alert('Exportando dados para Excel...')" class="glass-panel border border-madalux-gold/30 text-madalux-emerald px-3 py-2 rounded-xl text-sm font-medium hover:bg-madalux-emerald hover:text-white transition-all flex items-center">
+                            <i data-lucide="sheet" class="w-4 h-4 mr-2"></i> Excel
+                        </button>
+                    </div>
+                </div>
+                <div class="glass-panel p-6 rounded-2xl border border-madalux-gold/10">
+                    <div class="h-72 w-full relative flex items-center justify-center text-gray-500 text-sm">
+                        <canvas id="chart-demo"></canvas>
+                        <div id="chart-placeholder" class="absolute inset-0 flex flex-col items-center justify-center bg-madalux-graphite/50 backdrop-blur-sm rounded-xl">
+                            <i data-lucide="pie-chart" class="w-10 h-10 text-madalux-gold/40 mb-2"></i>
+                            <p>Sem dados transacionais para gerar gráficos.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- 6. CONSULTOR IA (RECUPERADO - INTERFACE DE CHAT) -->
+            <section id="tab-ia" class="tab-section hidden space-y-0 h-[calc(100vh-160px)] md:h-[calc(100vh-120px)] flex flex-col">
+                <div class="flex-1 glass-panel border border-madalux-gold/20 rounded-2xl flex flex-col overflow-hidden">
+                    <!-- Chat Header -->
+                    <div class="p-4 border-b border-madalux-gold/10 flex items-center space-x-3 bg-madalux-graphite/50">
+                        <div class="w-10 h-10 rounded-full bg-madalux-gold/10 flex items-center justify-center border border-madalux-gold/30 text-madalux-gold">
+                            <i data-lucide="bot" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-white">Consultor IA Madalux</h3>
+                            <p class="text-[10px] text-madalux-emerald flex items-center">
+                                <span class="w-1.5 h-1.5 bg-madalux-emerald rounded-full mr-1.5 animate-pulse"></span> Online e protegido
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Chat Messages Area -->
+                    <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4">
+                        <!-- Mensagem Inicial da IA -->
+                        <div class="flex justify-start">
+                            <div class="max-w-[85%] md:max-w-[70%] p-3 md:p-4 text-sm chat-ai shadow-md">
+                                Olá! Sou o seu consultor financeiro exclusivo da Madalux. O seu painel está limpo. Você pode me dizer coisas como: <strong>"Gastei R$ 50 no mercado"</strong>, <strong>"Recebi meu salário de 3000"</strong> ou perguntar sobre o mercado financeiro. Como posso ajudar?
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chat Input Area -->
+                    <div class="p-3 md:p-4 border-t border-madalux-gold/10 bg-madalux-graphite/80">
+                        <form onsubmit="handleChatSubmit(event)" class="flex items-center space-x-2">
+                            <input type="text" id="chat-input" placeholder="Digite uma despesa ou faça uma pergunta..." class="flex-1 bg-madalux-navy border border-gray-700 text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-madalux-gold transition-colors placeholder-gray-500">
+                            <button type="submit" class="bg-madalux-gold hover:bg-yellow-500 text-madalux-navy p-3 rounded-xl transition-colors shadow-lg">
+                                <i data-lucide="send" class="w-5 h-5"></i>
+                            </button>
+                        </form>
+                        <div class="flex items-center space-x-2 mt-2 overflow-x-auto pb-1 no-scrollbar text-xs">
+                            <button type="button" onclick="sendQuickMessage('Gastei R$ 50 no mercado')" class="whitespace-nowrap px-3 py-1.5 rounded-full border border-gray-700 text-gray-400 hover:text-madalux-gold hover:border-madalux-gold transition-colors">"Gastei 50 no mercado"</button>
+                            <button type="button" onclick="sendQuickMessage('Como está o Dólar?')" class="whitespace-nowrap px-3 py-1.5 rounded-full border border-gray-700 text-gray-400 hover:text-madalux-gold hover:border-madalux-gold transition-colors">"Como está o Dólar?"</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 7. ADMINISTRAÇÃO -->
+            <section id="tab-admin" class="tab-section hidden space-y-6">
+                <div>
+                    <h2 class="text-xl font-bold text-white">Administração de Acessos</h2>
+                    <p class="text-xs text-gray-400">Aprovação manual de novos membros da família/equipe.</p>
+                </div>
+                <div class="glass-panel p-0 rounded-2xl border border-madalux-gold/10 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse min-w-[600px]">
+                            <thead>
+                                <tr class="bg-madalux-graphite border-b border-madalux-gold/10">
+                                    <th class="p-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Usuário</th>
+                                    <th class="p-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">E-mail</th>
+                                    <th class="p-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
+                                    <th class="p-4 text-xs font-semibold text-gray-400 uppercase tracking-wider text-right">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Exemplo de Usuário Pendente -->
+                                <tr class="border-b border-madalux-gold/5 hover:bg-madalux-gold/5 transition-all" id="user-row-mariana">
+                                    <td class="p-4">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold text-white">M</div>
+                                            <span class="text-sm text-white font-medium">Mariana Silva</span>
+                                        </div>
+                                    </td>
+                                    <td class="p-4 text-sm text-gray-400">mariana@familia.com</td>
+                                    <td class="p-4">
+                                        <span class="px-2.5 py-1 rounded-full bg-yellow-500/20 text-yellow-500 text-[10px] font-bold uppercase">Pendente</span>
+                                    </td>
+                                    <td class="p-4 text-right space-x-2">
+                                        <button onclick="aprovarUsuario('Mariana', 'user-row-mariana')" class="bg-madalux-emerald text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-600 transition-all shadow-lg shadow-madalux-emerald/20">Aprovar</button>
+                                        <button class="bg-transparent border border-red-500/50 text-red-400 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-500/10 transition-all">Recusar</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- MENU INFERIOR (MOBILE) -->
+    <nav class="md:hidden fixed bottom-0 w-full glass-panel border-t border-madalux-gold/20 flex justify-between px-2 py-2 z-50 pb-safe">
+        <button onclick="changeTab('dashboard')" id="mob-nav-dashboard" class="mob-nav-btn flex-1 flex flex-col items-center p-2 text-madalux-gold">
+            <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+            <span class="text-[9px] mt-1 font-medium">Início</span>
+        </button>
+        <button onclick="changeTab('contas')" id="mob-nav-contas" class="mob-nav-btn flex-1 flex flex-col items-center p-2 text-gray-400 hover:text-madalux-gold">
+            <i data-lucide="landmark" class="w-5 h-5"></i>
+            <span class="text-[9px] mt-1 font-medium">Contas</span>
+        </button>
+        <!-- Ícone Central IA -->
+        <div class="flex-1 flex justify-center -mt-6">
+            <button onclick="changeTab('ia')" id="mob-nav-ia" class="mob-nav-btn flex items-center justify-center w-14 h-14 bg-gradient-to-b from-madalux-gold to-yellow-600 rounded-full shadow-[0_0_15px_rgba(212,177,106,0.4)] border-4 border-madalux-navy text-madalux-navy hover:scale-105 transition-transform">
+                <i data-lucide="bot" class="w-6 h-6"></i>
+            </button>
+        </div>
+        <button onclick="changeTab('metas')" id="mob-nav-metas" class="mob-nav-btn flex-1 flex flex-col items-center p-2 text-gray-400 hover:text-madalux-gold">
+            <i data-lucide="target" class="w-5 h-5"></i>
+            <span class="text-[9px] mt-1 font-medium">Metas</span>
+        </button>
+        <!-- Abre um menu extra modal no mobile para as opções restantes -->
+        <button onclick="toggleMobileMenu()" class="flex-1 flex flex-col items-center p-2 text-gray-400 hover:text-madalux-gold">
+            <i data-lucide="menu" class="w-5 h-5"></i>
+            <span class="text-[9px] mt-1 font-medium">Menu</span>
+        </button>
+    </nav>
+
+    <!-- OVERLAY MENU MOBILE (Para as abas que não couberam embaixo) -->
+    <div id="mobile-menu-overlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] hidden flex flex-col justify-end transition-opacity">
+        <div class="bg-madalux-graphite w-full rounded-t-3xl border-t border-madalux-gold/30 p-6 shadow-2xl transform transition-transform">
+            <div class="flex justify-between items-center mb-6 border-b border-gray-700 pb-4">
+                <h3 class="text-white font-bold text-lg">Menu Madalux</h3>
+                <button onclick="toggleMobileMenu()" class="p-2 bg-gray-800 rounded-full text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <button onclick="changeTab('mercado'); toggleMobileMenu();" class="flex flex-col items-center justify-center p-4 bg-gray-800/50 rounded-xl border border-gray-700 text-gray-300 hover:text-madalux-gold hover:border-madalux-gold/50">
+                    <i data-lucide="trending-up" class="w-6 h-6 mb-2"></i><span class="text-xs font-medium">Mercado</span>
+                </button>
+                <button onclick="changeTab('relatorios'); toggleMobileMenu();" class="flex flex-col items-center justify-center p-4 bg-gray-800/50 rounded-xl border border-gray-700 text-gray-300 hover:text-madalux-gold hover:border-madalux-gold/50">
+                    <i data-lucide="pie-chart" class="w-6 h-6 mb-2"></i><span class="text-xs font-medium">Relatórios</span>
+                </button>
+                <button onclick="changeTab('admin'); toggleMobileMenu();" class="flex flex-col items-center justify-center p-4 bg-gray-800/50 rounded-xl border border-gray-700 text-gray-300 hover:text-madalux-gold hover:border-madalux-gold/50">
+                    <i data-lucide="shield-check" class="w-6 h-6 mb-2"></i><span class="text-xs font-medium">Administração</span>
+                </button>
+                <button onclick="toggleTheme(); toggleMobileMenu();" class="flex flex-col items-center justify-center p-4 bg-gray-800/50 rounded-xl border border-gray-700 text-gray-300 hover:text-madalux-gold hover:border-madalux-gold/50">
+                    <i data-lucide="moon" class="w-6 h-6 mb-2"></i><span class="text-xs font-medium">Tema</span>
+                </button>
+            </div>
+            
+            <button onclick="alert('Funcionalidade PWA'); toggleMobileMenu();" class="w-full py-3 bg-madalux-gold/10 border border-madalux-gold/30 rounded-xl text-madalux-gold font-bold flex justify-center items-center">
+                <i data-lucide="download" class="w-5 h-5 mr-2"></i> Instalar App Madalux
+            </button>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script>
+        // Iniciar Ícones
+        lucide.createIcons();
+
+        // Sistema de Abas (Navegação)
+        function changeTab(tabId) {
+            // Esconde todas as sections
+            document.querySelectorAll('.tab-section').forEach(el => el.classList.add('hidden'));
+            // Mostra a selecionada
+            const activeSection = document.getElementById('tab-' + tabId);
+            if (activeSection) activeSection.classList.remove('hidden');
+
+            // Atualiza Título
+            const titles = {
+                'dashboard': 'Dashboard Executivo',
+                'contas': 'Contas & Instituições',
+                'mercado': 'Mercado Financeiro',
+                'metas': 'Planejamento de Metas',
+                'relatorios': 'Análise & Relatórios',
+                'ia': 'Consultor IA Madalux',
+                'admin': 'Administração de Acessos'
+            };
+            document.getElementById('page-title').innerText = titles[tabId] || 'Madalux';
+
+            // Atualiza botões do Desktop
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-madalux-gold/10', 'text-madalux-gold');
+                btn.classList.add('text-gray-400');
+            });
+            const deskBtn = document.getElementById('nav-' + tabId);
+            if(deskBtn) {
+                deskBtn.classList.remove('text-gray-400');
+                deskBtn.classList.add('bg-madalux-gold/10', 'text-madalux-gold');
+            }
+
+            // Atualiza botões do Mobile
+            document.querySelectorAll('.mob-nav-btn').forEach(btn => {
+                if(btn.id !== 'mob-nav-ia') { // Não remove a cor do botão central
+                    btn.classList.remove('text-madalux-gold');
+                    btn.classList.add('text-gray-400');
+                }
+            });
+            const mobBtn = document.getElementById('mob-nav-' + tabId);
+            if(mobBtn && mobBtn.id !== 'mob-nav-ia') {
+                mobBtn.classList.remove('text-gray-400');
+                mobBtn.classList.add('text-madalux-gold');
+            }
+
+            // Inicializar gráfico se for aba de relatórios
+            if(tabId === 'relatorios') initChart();
+        }
+
+        // Sistema de Privacidade (Ocultar Valores)
+        let isPrivacyOn = false;
+        function togglePrivacy() {
+            isPrivacyOn = !isPrivacyOn;
+            document.body.classList.toggle('privacy-on', isPrivacyOn);
+            const icon = document.getElementById('privacy-icon');
+            icon.setAttribute('data-lucide', isPrivacyOn ? 'eye-off' : 'eye');
+            lucide.createIcons();
+        }
+
+        // Alternar Modo Claro / Escuro
+        function toggleTheme() {
+            const htmlClasses = document.documentElement.classList;
+            htmlClasses.toggle('dark');
+            const isDark = htmlClasses.contains('dark');
+            
+            const icon = document.getElementById('theme-icon');
+            const text = document.getElementById('theme-text');
+            
+            if (isDark) {
+                if(icon) icon.setAttribute('data-lucide', 'moon');
+                if(text) text.innerText = 'Modo Claro';
+            } else {
+                if(icon) icon.setAttribute('data-lucide', 'sun');
+                if(text) text.innerText = 'Modo Escuro';
+            }
+            lucide.createIcons();
+        }
+
+        // Menu Mobile Auxiliar
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu-overlay');
+            menu.classList.toggle('hidden');
+        }
+
+        // Chat IA Lógica Simulada
+        const chatMessages = document.getElementById('chat-messages');
+        const chatInput = document.getElementById('chat-input');
+
+        function appendMessage(text, sender) {
+            const div = document.createElement('div');
+            div.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
+            const bubble = document.createElement('div');
+            bubble.className = `max-w-[85%] md:max-w-[70%] p-3 md:p-4 text-sm shadow-md ${sender === 'user' ? 'chat-user' : 'chat-ai'}`;
+            bubble.innerHTML = text;
+            div.appendChild(bubble);
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function handleChatSubmit(e) {
+            e.preventDefault();
+            const text = chatInput.value.trim();
+            if (!text) return;
+
+            appendMessage(text, 'user');
+            chatInput.value = '';
+
+            // Simular tempo de resposta e lógica simples
+            setTimeout(() => {
+                const textLower = text.toLowerCase();
+                
+                if (textLower.includes('gastei') || textLower.includes('comprei')) {
+                    // Simular cartão de confirmação de despesa
+                    const valueMatch = text.match(/\d+(?:,\d{1,2})?/);
+                    const val = valueMatch ? valueMatch[0] : 'XX,XX';
+                    
+                    const card = `
+                        <strong class="text-madalux-gold block mb-2"><i data-lucide="check-circle" class="inline w-4 h-4 mr-1"></i> Despesa Identificada</strong>
+                        Valor: <strong>R$ ${val}</strong><br>
+                        Categoria: Alimentação (Sugestão)<br>
+                        <div class="mt-3 flex space-x-2">
+                            <button class="px-3 py-1.5 bg-madalux-emerald text-white rounded text-xs font-bold" onclick="alert('Registrado no banco de dados!')">Confirmar</button>
+                            <button class="px-3 py-1.5 border border-gray-500 text-gray-300 rounded text-xs" onclick="alert('Cancelado.')">Cancelar</button>
+                        </div>
+                    `;
+                    appendMessage(card, 'ai');
+                    lucide.createIcons();
+                } 
+                else if (textLower.includes('dólar') || textLower.includes('mercado') || textLower.includes('bolsa')) {
+                    appendMessage("📈 <strong>Consulta de Mercado (Simulação):</strong><br>O Dólar está cotado a R$ 5,42 (-0.45%). O Ibovespa apresenta alta de +1.20% (128.450 pts). Deseja analisar algum ativo específico?", 'ai');
+                }
+                else {
+                    appendMessage("Compreendi. Como este é o ambiente de configuração inicial, aguardo você conectar suas contas ou registrar entradas/saídas para podermos fazer análises mais profundas.", 'ai');
+                }
+            }, 600);
+        }
+
+        function sendQuickMessage(msg) {
+            chatInput.value = msg;
+            handleChatSubmit(new Event('submit'));
+        }
+
+        // Função do Admin Panel
+        function aprovarUsuario(nome, rowId) {
+            alert(`✅ O acesso de ${nome} foi aprovado com sucesso! Um e-mail foi disparado.`);
+            document.getElementById(rowId).style.display = 'none';
+        }
+
+        // Iniciar Gráfico Fictício (Se necessário)
+        let chartInstance = null;
+        function initChart() {
+            const ctx = document.getElementById('chart-demo');
+            if(!ctx || chartInstance) return;
+            // Apenas inicializa o contexto, mantemos o placeholder visível porque o sistema está "zerado"
+            chartInstance = true; 
+        }
+
+        // Definir aba inicial
+        changeTab('dashboard');
+
+    </script>
+</body>
+</html>
