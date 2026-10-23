@@ -3,649 +3,1372 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Madalux — Gestão Financeira Exclusiva</title>
-    
-    <!-- Tailwind CSS & Plugins -->
+    <title>Madalux — Plataforma Financeira Inteligente</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Configuração de Identidade Visual -->
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
                     colors: {
-                        madalux: {
-                            navy: '#101C2C',
-                            graphite: '#202B3A',
-                            gold: '#D4B16A',
-                            emerald: '#087F5B',
-                            light: '#F3F5F7'
-                        }
-                    }
+                        navy: { DEFAULT: '#101C2C', dark: '#0a121d', light: '#1b2d45' },
+                        emerald: { DEFAULT: '#087F5B', light: '#0ca678' },
+                        gold: { DEFAULT: '#D4B16A', light: '#e2c585', dark: '#b8964d' },
+                        grafite: { DEFAULT: '#202B3A', light: '#2d3b4e', dark: '#151d28' },
+                        surface: { light: '#ffffff', dark: '#202B3A' },
+                        background: { light: '#F3F5F7', dark: '#101C2C' }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
                 }
             }
         }
     </script>
-
-    <!-- Estilos Customizados (Glassmorphism e Privacidade) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; transition: background-color 0.3s, color 0.3s; }
-        
-        /* Glassmorphism Panels */
-        .glass-panel { 
-            background: rgba(32, 43, 58, 0.7); 
-            backdrop-filter: blur(12px); 
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(212, 177, 106, 0.15); 
-        }
-        .light .glass-panel { 
-            background: rgba(255, 255, 255, 0.8); 
-            border: 1px solid rgba(0, 0, 0, 0.05); 
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); 
-        }
-        
-        /* Ocultar valores privados */
-        .privacy-on .financial-value { 
-            filter: blur(6px); 
-            opacity: 0.8;
-            user-select: none; 
-            pointer-events: none;
-        }
-
-        /* Scrollbar customizada */
+        body { font-family: 'Inter', sans-serif; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(212, 177, 106, 0.3); border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(212, 177, 106, 0.6); }
-
-        /* IA Chat Balões */
-        .chat-user { background: #D4B16A; color: #101C2C; border-radius: 16px 16px 0 16px; }
-        .chat-ai { background: #202B3A; color: #e5e7eb; border: 1px solid rgba(212, 177, 106, 0.2); border-radius: 16px 16px 16px 0; }
-        .light .chat-ai { background: #f3f4f6; color: #111827; border-color: #e5e7eb; }
+        ::-webkit-scrollbar-thumb { background: #D4B16A40; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #D4B16A80; }
+        .privacy-on .financial-value { filter: blur(6px); user-select: none; }
     </style>
 </head>
-<body class="bg-madalux-light dark:bg-madalux-navy text-gray-900 dark:text-gray-100 min-h-screen flex overflow-hidden selection:bg-madalux-gold selection:text-madalux-navy">
+<body class="bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-300 flex flex-col md:flex-row select-none">
 
-    <!-- MENU LATERAL (DESKTOP) -->
-    <aside class="w-64 hidden md:flex flex-col justify-between glass-panel border-r border-madalux-gold/20 z-20 h-screen transition-all">
-        <div>
-            <!-- Logomarca Oficial Madalux -->
-            <div class="p-6 flex items-center justify-center border-b border-madalux-gold/10">
-                <img src="https://storage.googleapis.com/generative-ai/images/Emblema%20Dourado%20Abstrato%20em%20Fundo%20Negro.png" alt="Madalux Logo" class="h-14 object-contain drop-shadow-[0_0_10px_rgba(212,177,106,0.2)]">
+    <!-- App Root Container -->
+    <div id="app-root" class="w-full min-h-screen flex flex-col md:flex-row"></div>
+
+    <!-- Global Modal Container -->
+    <div id="global-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div id="modal-content" class="bg-surface-light dark:bg-grafite border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200"></div>
+    </div>
+
+    <!-- Open Finance Modal -->
+    <div id="modal-openfinance" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-surface-light dark:bg-grafite w-full max-w-md p-6 rounded-2xl border border-gold/30 shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold flex items-center"><i data-lucide="link" class="w-5 h-5 mr-2 text-gold"></i> Conectar Instituição</h3>
+                <button onclick="document.getElementById('modal-openfinance').classList.add('hidden')" class="text-slate-400 hover:text-slate-100"><i data-lucide="x"></i></button>
             </div>
+            <p class="text-xs text-slate-400 mb-6">Sincronize seu saldo e transações de forma automática e segura via Open Finance.</p>
             
-            <nav class="p-4 space-y-1 mt-2 overflow-y-auto">
-                <button onclick="changeTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center space-x-3 p-3 rounded-xl bg-madalux-gold/10 text-madalux-gold transition-all text-left font-medium text-sm">
-                    <i data-lucide="layout-dashboard" class="w-5 h-5"></i><span>Dashboard</span>
+            <div class="space-y-3 text-sm">
+                <button class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-gold hover:bg-gold/10 transition-all">
+                    <div class="flex items-center"><div class="w-8 h-8 rounded bg-purple-600 mr-3"></div><span class="font-medium">Nubank</span></div>
+                    <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
                 </button>
-                <button onclick="changeTab('contas')" id="nav-contas" class="nav-btn w-full flex items-center space-x-3 p-3 rounded-xl text-gray-400 hover:text-madalux-gold hover:bg-madalux-gold/5 transition-all text-left font-medium text-sm">
-                    <i data-lucide="landmark" class="w-5 h-5"></i><span>Contas e Bancos</span>
+                <button class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-gold hover:bg-gold/10 transition-all">
+                    <div class="flex items-center"><div class="w-8 h-8 rounded bg-orange-500 mr-3"></div><span class="font-medium">Itaú Personnalité</span></div>
+                    <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
                 </button>
-                <button onclick="changeTab('mercado')" id="nav-mercado" class="nav-btn w-full flex items-center space-x-3 p-3 rounded-xl text-gray-400 hover:text-madalux-gold hover:bg-madalux-gold/5 transition-all text-left font-medium text-sm">
-                    <i data-lucide="trending-up" class="w-5 h-5"></i><span>Mercado & Bolsas</span>
-                </button>
-                <button onclick="changeTab('metas')" id="nav-metas" class="nav-btn w-full flex items-center space-x-3 p-3 rounded-xl text-gray-400 hover:text-madalux-gold hover:bg-madalux-gold/5 transition-all text-left font-medium text-sm">
-                    <i data-lucide="target" class="w-5 h-5"></i><span>Metas Financeiras</span>
-                </button>
-                <button onclick="changeTab('relatorios')" id="nav-relatorios" class="nav-btn w-full flex items-center space-x-3 p-3 rounded-xl text-gray-400 hover:text-madalux-gold hover:bg-madalux-gold/5 transition-all text-left font-medium text-sm">
-                    <i data-lucide="pie-chart" class="w-5 h-5"></i><span>Relatórios</span>
-                </button>
-                <button onclick="changeTab('ia')" id="nav-ia" class="nav-btn w-full flex items-center space-x-3 p-3 rounded-xl text-gray-400 hover:text-madalux-gold hover:bg-madalux-gold/5 transition-all text-left font-medium text-sm">
-                    <i data-lucide="bot" class="w-5 h-5"></i><span>Consultor IA (PRO)</span>
-                </button>
-                <button onclick="changeTab('admin')" id="nav-admin" class="nav-btn w-full flex items-center space-x-3 p-3 rounded-xl text-gray-400 hover:text-madalux-gold hover:bg-madalux-gold/5 transition-all text-left font-medium text-sm">
-                    <i data-lucide="shield-check" class="w-5 h-5"></i><span>Administração</span>
-                </button>
-            </nav>
-        </div>
-        
-        <div class="p-4 border-t border-madalux-gold/10 space-y-2">
-            <!-- Botão PWA -->
-            <button onclick="alert('Funcionalidade PWA: O prompt de instalação nativa do sistema operacional seria acionado aqui.')" class="w-full flex items-center justify-center space-x-2 p-2.5 rounded-xl bg-madalux-gold/10 border border-madalux-gold/30 text-madalux-gold hover:bg-madalux-gold hover:text-madalux-navy transition-all">
-                <i data-lucide="download" class="w-4 h-4"></i>
-                <span class="text-sm font-semibold">Instalar App</span>
-            </button>
-            <button onclick="toggleTheme()" class="w-full flex items-center space-x-3 p-3 rounded-xl text-gray-400 hover:text-madalux-gold transition-all text-left text-sm">
-                <i data-lucide="moon" id="theme-icon" class="w-5 h-5"></i><span id="theme-text">Modo Claro</span>
-            </button>
-        </div>
-    </aside>
-
-    <!-- CONTEÚDO PRINCIPAL -->
-    <main class="flex-1 flex flex-col h-screen overflow-y-auto relative">
-        
-        <!-- CABEÇALHO -->
-        <header class="p-4 md:p-6 flex justify-between items-center glass-panel border-b border-madalux-gold/10 z-10 sticky top-0">
-            <div class="flex items-center space-x-3">
-                <!-- Mobile Menu Button -->
-                <button onclick="toggleMobileMenu()" class="md:hidden p-2 text-madalux-gold hover:bg-madalux-gold/10 rounded-lg">
-                    <i data-lucide="menu" class="w-6 h-6"></i>
-                </button>
-                <img src="https://storage.googleapis.com/generative-ai/images/Emblema%20Dourado%20Abstrato%20em%20Fundo%20Negro.png" alt="Madalux Logo" class="h-8 md:hidden object-contain">
-                <div class="hidden md:block">
-                    <h1 class="text-xl md:text-2xl font-bold text-madalux-gold tracking-tight" id="page-title">Dashboard Executivo</h1>
-                    <p class="text-xs text-gray-400">Inteligência Patrimonial Madalux</p>
-                </div>
-            </div>
-            
-            <div class="flex items-center space-x-3 md:space-x-4">
-                <button onclick="togglePrivacy()" class="p-2 rounded-full bg-madalux-graphite border border-madalux-gold/20 text-madalux-gold hover:bg-madalux-gold/20 transition-all shadow-lg" title="Modo Privacidade">
-                    <i data-lucide="eye" id="privacy-icon" class="w-5 h-5"></i>
-                </button>
-                <div class="w-9 h-9 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-madalux-navy to-madalux-graphite border border-madalux-gold/50 flex items-center justify-center overflow-hidden shadow-lg">
-                    <img src="https://storage.googleapis.com/generative-ai/images/Emblema%20Dourado%20Abstrato%20em%20Fundo%20Negro.png" alt="User" class="h-5 object-contain">
-                </div>
-            </div>
-        </header>
-
-        <!-- SECTIONS CONTAINER -->
-        <div class="p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full pb-24 md:pb-8" id="main-content">
-            
-            <!-- 1. DASHBOARD -->
-            <section id="tab-dashboard" class="tab-section space-y-6">
-                <!-- Cartões Interativos -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                    <div onclick="changeTab('contas')" class="glass-panel p-5 rounded-2xl border border-madalux-gold/20 hover:border-madalux-gold cursor-pointer transition-all group relative overflow-hidden">
-                        <div class="absolute right-0 top-0 w-16 h-16 bg-madalux-gold/5 rounded-bl-full"></div>
-                        <div class="flex justify-between items-start">
-                            <p class="text-gray-400 text-xs font-semibold uppercase tracking-wider">Patrimônio Líquido</p>
-                            <i data-lucide="shield" class="w-4 h-4 text-madalux-gold"></i>
-                        </div>
-                        <h2 class="text-3xl font-bold mt-3 financial-value text-white">R$ 0,00</h2>
-                    </div>
-                    
-                    <div onclick="changeTab('relatorios')" class="glass-panel p-5 rounded-2xl border border-madalux-gold/20 hover:border-madalux-emerald cursor-pointer transition-all group relative overflow-hidden">
-                        <div class="absolute right-0 top-0 w-16 h-16 bg-madalux-emerald/5 rounded-bl-full"></div>
-                        <div class="flex justify-between items-start">
-                            <p class="text-gray-400 text-xs font-semibold uppercase tracking-wider">Receitas do Mês</p>
-                            <i data-lucide="arrow-up-right" class="w-4 h-4 text-madalux-emerald"></i>
-                        </div>
-                        <h2 class="text-3xl font-bold mt-3 financial-value text-madalux-emerald">R$ 0,00</h2>
-                    </div>
-                    
-                    <div onclick="changeTab('relatorios')" class="glass-panel p-5 rounded-2xl border border-madalux-gold/20 hover:border-red-500/50 cursor-pointer transition-all group relative overflow-hidden">
-                        <div class="absolute right-0 top-0 w-16 h-16 bg-red-500/5 rounded-bl-full"></div>
-                        <div class="flex justify-between items-start">
-                            <p class="text-gray-400 text-xs font-semibold uppercase tracking-wider">Despesas do Mês</p>
-                            <i data-lucide="arrow-down-right" class="w-4 h-4 text-red-400"></i>
-                        </div>
-                        <h2 class="text-3xl font-bold mt-3 financial-value text-red-400">R$ 0,00</h2>
-                    </div>
-                    
-                    <div onclick="changeTab('relatorios')" class="glass-panel p-5 rounded-2xl border border-madalux-gold/20 hover:border-blue-400/50 cursor-pointer transition-all group relative overflow-hidden">
-                        <div class="absolute right-0 top-0 w-16 h-16 bg-blue-500/5 rounded-bl-full"></div>
-                        <div class="flex justify-between items-start">
-                            <p class="text-gray-400 text-xs font-semibold uppercase tracking-wider">Resultado Líquido</p>
-                            <i data-lucide="activity" class="w-4 h-4 text-gray-400"></i>
-                        </div>
-                        <h2 class="text-3xl font-bold mt-3 financial-value text-gray-300">R$ 0,00</h2>
-                    </div>
-                </div>
-                
-                <div class="glass-panel p-8 rounded-2xl border border-madalux-gold/10 border-dashed flex flex-col items-center justify-center py-16 text-center">
-                    <div class="w-16 h-16 rounded-full bg-madalux-gold/10 flex items-center justify-center mb-4">
-                        <img src="https://storage.googleapis.com/generative-ai/images/Emblema%20Dourado%20Abstrato%20em%20Fundo%20Negro.png" alt="Icon" class="h-8 opacity-70">
-                    </div>
-                    <h3 class="text-xl font-bold text-white mb-2">Painel Limpo e Preparado</h3>
-                    <p class="text-sm text-gray-400 max-w-md">O seu sistema encontra-se zerado. Conecte as suas contas no menu "Contas e Bancos" ou registe a sua primeira transação conversando com o Consultor IA.</p>
-                    <div class="mt-6 flex space-x-3">
-                        <button onclick="changeTab('contas')" class="px-5 py-2.5 bg-madalux-gold text-madalux-navy font-bold rounded-xl text-sm hover:bg-yellow-500 transition-all shadow-lg shadow-madalux-gold/20">Configurar Contas</button>
-                        <button onclick="changeTab('ia')" class="px-5 py-2.5 border border-madalux-gold text-madalux-gold font-bold rounded-xl text-sm hover:bg-madalux-gold/10 transition-all">Falar com IA</button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- 2. CONTAS E BANCOS -->
-            <section id="tab-contas" class="tab-section hidden space-y-6">
-                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                    <div>
-                        <h2 class="text-xl font-bold text-white">Contas & Instituições</h2>
-                        <p class="text-xs text-gray-400">Faça a gestão do seu património e liquidez.</p>
-                    </div>
-                    <button onclick="alert('Simulação: Abrindo painel de conexão de APIs Open Finance...')" class="bg-madalux-gold text-madalux-navy px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-yellow-500 transition-all flex items-center justify-center space-x-2 shadow-lg shadow-madalux-gold/20">
-                        <i data-lucide="link" class="w-4 h-4"></i>
-                        <span>Conectar Open Finance</span>
-                    </button>
-                </div>
-                <div class="glass-panel p-6 rounded-2xl border border-dashed border-madalux-gold/20 flex flex-col items-center justify-center py-20 text-center">
-                    <i data-lucide="landmark" class="w-12 h-12 text-madalux-gold/30 mb-4"></i>
-                    <p class="text-sm text-gray-400">Nenhuma conta cadastrada ou sincronizada no momento.</p>
-                </div>
-            </section>
-
-            <!-- 3. MERCADO E BOLSAS (RECUPERADO) -->
-            <section id="tab-mercado" class="tab-section hidden space-y-6">
-                <div>
-                    <h2 class="text-xl font-bold text-white">Mercado Financeiro</h2>
-                    <p class="text-xs text-gray-400">Indicadores e cotações (Simulação Estática).</p>
-                </div>
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    <!-- Dólar -->
-                    <div class="glass-panel p-5 rounded-2xl border border-madalux-gold/10">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-xs text-gray-400 font-semibold uppercase">Dólar Comercial</span>
-                            <span class="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded font-bold">-0.45%</span>
-                        </div>
-                        <h3 class="text-xl font-bold text-white">R$ 5,42</h3>
-                    </div>
-                    <!-- Euro -->
-                    <div class="glass-panel p-5 rounded-2xl border border-madalux-gold/10">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-xs text-gray-400 font-semibold uppercase">Euro</span>
-                            <span class="text-[10px] bg-madalux-emerald/20 text-madalux-emerald px-2 py-0.5 rounded font-bold">+0.12%</span>
-                        </div>
-                        <h3 class="text-xl font-bold text-white">R$ 5,88</h3>
-                    </div>
-                    <!-- Ibovespa -->
-                    <div class="glass-panel p-5 rounded-2xl border border-madalux-gold/10">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-xs text-gray-400 font-semibold uppercase">Ibovespa</span>
-                            <span class="text-[10px] bg-madalux-emerald/20 text-madalux-emerald px-2 py-0.5 rounded font-bold">+1.20%</span>
-                        </div>
-                        <h3 class="text-xl font-bold text-white">128.450 pts</h3>
-                    </div>
-                    <!-- Selic -->
-                    <div class="glass-panel p-5 rounded-2xl border border-madalux-gold/10">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-xs text-gray-400 font-semibold uppercase">Taxa Selic</span>
-                            <span class="text-[10px] bg-gray-700 text-gray-300 px-2 py-0.5 rounded font-bold">Mantida</span>
-                        </div>
-                        <h3 class="text-xl font-bold text-white">10,50% a.a.</h3>
-                    </div>
-                </div>
-            </section>
-
-            <!-- 4. METAS (RECUPERADO) -->
-            <section id="tab-metas" class="tab-section hidden space-y-6">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h2 class="text-xl font-bold text-white">Planejamento de Metas</h2>
-                        <p class="text-xs text-gray-400">Acompanhe seus objetivos de vida.</p>
-                    </div>
-                    <button class="bg-madalux-graphite border border-madalux-gold/30 text-madalux-gold px-3 py-2 rounded-xl text-sm font-medium hover:bg-madalux-gold hover:text-madalux-navy transition-all">
-                        <i data-lucide="plus" class="w-4 h-4 inline-block mr-1"></i>Nova Meta
-                    </button>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Meta 1 -->
-                    <div class="glass-panel p-6 rounded-2xl border border-madalux-gold/20">
-                        <div class="flex justify-between items-start mb-4">
-                            <div class="p-2 bg-madalux-gold/10 rounded-lg text-madalux-gold"><i data-lucide="shield-check"></i></div>
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Dez 2026</span>
-                        </div>
-                        <h3 class="font-bold text-white mb-1">Reserva de Emergência</h3>
-                        <p class="text-xs text-gray-400 mb-4">Proteção para imprevistos (6 meses de custo)</p>
-                        
-                        <div class="flex justify-between text-xs mb-1">
-                            <span class="text-gray-300">Acumulado: <span class="financial-value font-bold">R$ 0,00</span></span>
-                            <span class="text-madalux-gold font-bold">0%</span>
-                        </div>
-                        <div class="w-full bg-gray-800 rounded-full h-2.5 mb-2 overflow-hidden">
-                            <div class="bg-gradient-to-r from-madalux-gold to-madalux-emerald h-2.5 rounded-full" style="width: 0%"></div>
-                        </div>
-                        <div class="text-[10px] text-gray-500 text-right">Meta: <span class="financial-value">R$ 50.000,00</span></div>
-                    </div>
-                    
-                    <!-- Meta 2 -->
-                    <div class="glass-panel p-6 rounded-2xl border border-madalux-gold/20">
-                        <div class="flex justify-between items-start mb-4">
-                            <div class="p-2 bg-madalux-gold/10 rounded-lg text-madalux-gold"><i data-lucide="plane"></i></div>
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Jul 2027</span>
-                        </div>
-                        <h3 class="font-bold text-white mb-1">Viagem Internacional</h3>
-                        <p class="text-xs text-gray-400 mb-4">Europa (Família)</p>
-                        
-                        <div class="flex justify-between text-xs mb-1">
-                            <span class="text-gray-300">Acumulado: <span class="financial-value font-bold">R$ 0,00</span></span>
-                            <span class="text-madalux-gold font-bold">0%</span>
-                        </div>
-                        <div class="w-full bg-gray-800 rounded-full h-2.5 mb-2 overflow-hidden">
-                            <div class="bg-gradient-to-r from-madalux-gold to-madalux-emerald h-2.5 rounded-full" style="width: 0%"></div>
-                        </div>
-                        <div class="text-[10px] text-gray-500 text-right">Meta: <span class="financial-value">R$ 35.000,00</span></div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- 5. RELATÓRIOS -->
-            <section id="tab-relatorios" class="tab-section hidden space-y-6">
-                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                    <div>
-                        <h2 class="text-xl font-bold text-white">Análise e Relatórios</h2>
-                        <p class="text-xs text-gray-400">Visão gráfica da sua evolução patrimonial.</p>
-                    </div>
-                    <div class="flex space-x-2">
-                        <button onclick="alert('Exportando PDF Executivo Madalux...')" class="glass-panel border border-madalux-gold/30 text-madalux-gold px-3 py-2 rounded-xl text-sm font-medium hover:bg-madalux-gold hover:text-madalux-navy transition-all flex items-center">
-                            <i data-lucide="file-text" class="w-4 h-4 mr-2"></i> PDF
-                        </button>
-                        <button onclick="alert('Exportando dados para Excel...')" class="glass-panel border border-madalux-gold/30 text-madalux-emerald px-3 py-2 rounded-xl text-sm font-medium hover:bg-madalux-emerald hover:text-white transition-all flex items-center">
-                            <i data-lucide="sheet" class="w-4 h-4 mr-2"></i> Excel
-                        </button>
-                    </div>
-                </div>
-                <div class="glass-panel p-6 rounded-2xl border border-madalux-gold/10">
-                    <div class="h-72 w-full relative flex items-center justify-center text-gray-500 text-sm">
-                        <canvas id="chart-demo"></canvas>
-                        <div id="chart-placeholder" class="absolute inset-0 flex flex-col items-center justify-center bg-madalux-graphite/50 backdrop-blur-sm rounded-xl">
-                            <i data-lucide="pie-chart" class="w-10 h-10 text-madalux-gold/40 mb-2"></i>
-                            <p>Sem dados transacionais para gerar gráficos.</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-            
-            <!-- 6. CONSULTOR IA (RECUPERADO - INTERFACE DE CHAT) -->
-            <section id="tab-ia" class="tab-section hidden space-y-0 h-[calc(100vh-160px)] md:h-[calc(100vh-120px)] flex flex-col">
-                <div class="flex-1 glass-panel border border-madalux-gold/20 rounded-2xl flex flex-col overflow-hidden">
-                    <!-- Chat Header -->
-                    <div class="p-4 border-b border-madalux-gold/10 flex items-center space-x-3 bg-madalux-graphite/50">
-                        <div class="w-10 h-10 rounded-full bg-madalux-gold/10 flex items-center justify-center border border-madalux-gold/30 text-madalux-gold">
-                            <i data-lucide="bot" class="w-5 h-5"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-sm font-bold text-white">Consultor IA Madalux</h3>
-                            <p class="text-[10px] text-madalux-emerald flex items-center">
-                                <span class="w-1.5 h-1.5 bg-madalux-emerald rounded-full mr-1.5 animate-pulse"></span> Online e protegido
-                            </p>
-                        </div>
-                    </div>
-                    
-                    <!-- Chat Messages Area -->
-                    <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4">
-                        <!-- Mensagem Inicial da IA -->
-                        <div class="flex justify-start">
-                            <div class="max-w-[85%] md:max-w-[70%] p-3 md:p-4 text-sm chat-ai shadow-md">
-                                Olá! Sou o seu consultor financeiro exclusivo da Madalux. O seu painel está limpo. Você pode me dizer coisas como: <strong>"Gastei R$ 50 no mercado"</strong>, <strong>"Recebi meu salário de 3000"</strong> ou perguntar sobre o mercado financeiro. Como posso ajudar?
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Chat Input Area -->
-                    <div class="p-3 md:p-4 border-t border-madalux-gold/10 bg-madalux-graphite/80">
-                        <form onsubmit="handleChatSubmit(event)" class="flex items-center space-x-2">
-                            <input type="text" id="chat-input" placeholder="Digite uma despesa ou faça uma pergunta..." class="flex-1 bg-madalux-navy border border-gray-700 text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-madalux-gold transition-colors placeholder-gray-500">
-                            <button type="submit" class="bg-madalux-gold hover:bg-yellow-500 text-madalux-navy p-3 rounded-xl transition-colors shadow-lg">
-                                <i data-lucide="send" class="w-5 h-5"></i>
-                            </button>
-                        </form>
-                        <div class="flex items-center space-x-2 mt-2 overflow-x-auto pb-1 no-scrollbar text-xs">
-                            <button type="button" onclick="sendQuickMessage('Gastei R$ 50 no mercado')" class="whitespace-nowrap px-3 py-1.5 rounded-full border border-gray-700 text-gray-400 hover:text-madalux-gold hover:border-madalux-gold transition-colors">"Gastei 50 no mercado"</button>
-                            <button type="button" onclick="sendQuickMessage('Como está o Dólar?')" class="whitespace-nowrap px-3 py-1.5 rounded-full border border-gray-700 text-gray-400 hover:text-madalux-gold hover:border-madalux-gold transition-colors">"Como está o Dólar?"</button>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- 7. ADMINISTRAÇÃO -->
-            <section id="tab-admin" class="tab-section hidden space-y-6">
-                <div>
-                    <h2 class="text-xl font-bold text-white">Administração de Acessos</h2>
-                    <p class="text-xs text-gray-400">Aprovação manual de novos membros da família/equipe.</p>
-                </div>
-                <div class="glass-panel p-0 rounded-2xl border border-madalux-gold/10 overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse min-w-[600px]">
-                            <thead>
-                                <tr class="bg-madalux-graphite border-b border-madalux-gold/10">
-                                    <th class="p-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Usuário</th>
-                                    <th class="p-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">E-mail</th>
-                                    <th class="p-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
-                                    <th class="p-4 text-xs font-semibold text-gray-400 uppercase tracking-wider text-right">Ação</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Exemplo de Usuário Pendente -->
-                                <tr class="border-b border-madalux-gold/5 hover:bg-madalux-gold/5 transition-all" id="user-row-mariana">
-                                    <td class="p-4">
-                                        <div class="flex items-center space-x-3">
-                                            <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold text-white">M</div>
-                                            <span class="text-sm text-white font-medium">Mariana Silva</span>
-                                        </div>
-                                    </td>
-                                    <td class="p-4 text-sm text-gray-400">mariana@familia.com</td>
-                                    <td class="p-4">
-                                        <span class="px-2.5 py-1 rounded-full bg-yellow-500/20 text-yellow-500 text-[10px] font-bold uppercase">Pendente</span>
-                                    </td>
-                                    <td class="p-4 text-right space-x-2">
-                                        <button onclick="aprovarUsuario('Mariana', 'user-row-mariana')" class="bg-madalux-emerald text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-600 transition-all shadow-lg shadow-madalux-emerald/20">Aprovar</button>
-                                        <button class="bg-transparent border border-red-500/50 text-red-400 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-500/10 transition-all">Recusar</button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
-
-        </div>
-    </main>
-
-    <!-- MENU INFERIOR (MOBILE) -->
-    <nav class="md:hidden fixed bottom-0 w-full glass-panel border-t border-madalux-gold/20 flex justify-between px-2 py-2 z-50 pb-safe">
-        <button onclick="changeTab('dashboard')" id="mob-nav-dashboard" class="mob-nav-btn flex-1 flex flex-col items-center p-2 text-madalux-gold">
-            <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
-            <span class="text-[9px] mt-1 font-medium">Início</span>
-        </button>
-        <button onclick="changeTab('contas')" id="mob-nav-contas" class="mob-nav-btn flex-1 flex flex-col items-center p-2 text-gray-400 hover:text-madalux-gold">
-            <i data-lucide="landmark" class="w-5 h-5"></i>
-            <span class="text-[9px] mt-1 font-medium">Contas</span>
-        </button>
-        <!-- Ícone Central IA -->
-        <div class="flex-1 flex justify-center -mt-6">
-            <button onclick="changeTab('ia')" id="mob-nav-ia" class="mob-nav-btn flex items-center justify-center w-14 h-14 bg-gradient-to-b from-madalux-gold to-yellow-600 rounded-full shadow-[0_0_15px_rgba(212,177,106,0.4)] border-4 border-madalux-navy text-madalux-navy hover:scale-105 transition-transform">
-                <i data-lucide="bot" class="w-6 h-6"></i>
-            </button>
-        </div>
-        <button onclick="changeTab('metas')" id="mob-nav-metas" class="mob-nav-btn flex-1 flex flex-col items-center p-2 text-gray-400 hover:text-madalux-gold">
-            <i data-lucide="target" class="w-5 h-5"></i>
-            <span class="text-[9px] mt-1 font-medium">Metas</span>
-        </button>
-        <!-- Abre um menu extra modal no mobile para as opções restantes -->
-        <button onclick="toggleMobileMenu()" class="flex-1 flex flex-col items-center p-2 text-gray-400 hover:text-madalux-gold">
-            <i data-lucide="menu" class="w-5 h-5"></i>
-            <span class="text-[9px] mt-1 font-medium">Menu</span>
-        </button>
-    </nav>
-
-    <!-- OVERLAY MENU MOBILE (Para as abas que não couberam embaixo) -->
-    <div id="mobile-menu-overlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] hidden flex flex-col justify-end transition-opacity">
-        <div class="bg-madalux-graphite w-full rounded-t-3xl border-t border-madalux-gold/30 p-6 shadow-2xl transform transition-transform">
-            <div class="flex justify-between items-center mb-6 border-b border-gray-700 pb-4">
-                <h3 class="text-white font-bold text-lg">Menu Madalux</h3>
-                <button onclick="toggleMobileMenu()" class="p-2 bg-gray-800 rounded-full text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
-            </div>
-            
-            <div class="grid grid-cols-2 gap-3 mb-6">
-                <button onclick="changeTab('mercado'); toggleMobileMenu();" class="flex flex-col items-center justify-center p-4 bg-gray-800/50 rounded-xl border border-gray-700 text-gray-300 hover:text-madalux-gold hover:border-madalux-gold/50">
-                    <i data-lucide="trending-up" class="w-6 h-6 mb-2"></i><span class="text-xs font-medium">Mercado</span>
-                </button>
-                <button onclick="changeTab('relatorios'); toggleMobileMenu();" class="flex flex-col items-center justify-center p-4 bg-gray-800/50 rounded-xl border border-gray-700 text-gray-300 hover:text-madalux-gold hover:border-madalux-gold/50">
-                    <i data-lucide="pie-chart" class="w-6 h-6 mb-2"></i><span class="text-xs font-medium">Relatórios</span>
-                </button>
-                <button onclick="changeTab('admin'); toggleMobileMenu();" class="flex flex-col items-center justify-center p-4 bg-gray-800/50 rounded-xl border border-gray-700 text-gray-300 hover:text-madalux-gold hover:border-madalux-gold/50">
-                    <i data-lucide="shield-check" class="w-6 h-6 mb-2"></i><span class="text-xs font-medium">Administração</span>
-                </button>
-                <button onclick="toggleTheme(); toggleMobileMenu();" class="flex flex-col items-center justify-center p-4 bg-gray-800/50 rounded-xl border border-gray-700 text-gray-300 hover:text-madalux-gold hover:border-madalux-gold/50">
-                    <i data-lucide="moon" class="w-6 h-6 mb-2"></i><span class="text-xs font-medium">Tema</span>
+                <button class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-gold hover:bg-gold/10 transition-all">
+                    <div class="flex items-center"><div class="w-8 h-8 rounded bg-yellow-400 mr-3"></div><span class="font-medium">Banco do Brasil</span></div>
+                    <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
                 </button>
             </div>
-            
-            <button onclick="alert('Funcionalidade PWA'); toggleMobileMenu();" class="w-full py-3 bg-madalux-gold/10 border border-madalux-gold/30 rounded-xl text-madalux-gold font-bold flex justify-center items-center">
-                <i data-lucide="download" class="w-5 h-5 mr-2"></i> Instalar App Madalux
-            </button>
         </div>
     </div>
 
-    <!-- SCRIPTS -->
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-navy dark:bg-grafite border border-gold/40 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center space-x-3 text-xs">
+        <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400"></i>
+        <span id="toast-message">Operação realizada com sucesso!</span>
+    </div>
+
+    <!-- Application JavaScript Logic -->
     <script>
-        // Iniciar Ícones
-        lucide.createIcons();
+        const LOGO_URL = 'https://storage.googleapis.com/generative-ai/images/Emblema%20Dourado%20Abstrato%20em%20Fundo%20Negro_2.png';
 
-        // Sistema de Abas (Navegação)
-        function changeTab(tabId) {
-            // Esconde todas as sections
-            document.querySelectorAll('.tab-section').forEach(el => el.classList.add('hidden'));
-            // Mostra a selecionada
-            const activeSection = document.getElementById('tab-' + tabId);
-            if (activeSection) activeSection.classList.remove('hidden');
-
-            // Atualiza Título
-            const titles = {
-                'dashboard': 'Dashboard Executivo',
-                'contas': 'Contas & Instituições',
-                'mercado': 'Mercado Financeiro',
-                'metas': 'Planejamento de Metas',
-                'relatorios': 'Análise & Relatórios',
-                'ia': 'Consultor IA Madalux',
-                'admin': 'Administração de Acessos'
-            };
-            document.getElementById('page-title').innerText = titles[tabId] || 'Madalux';
-
-            // Atualiza botões do Desktop
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.remove('bg-madalux-gold/10', 'text-madalux-gold');
-                btn.classList.add('text-gray-400');
-            });
-            const deskBtn = document.getElementById('nav-' + tabId);
-            if(deskBtn) {
-                deskBtn.classList.remove('text-gray-400');
-                deskBtn.classList.add('bg-madalux-gold/10', 'text-madalux-gold');
-            }
-
-            // Atualiza botões do Mobile
-            document.querySelectorAll('.mob-nav-btn').forEach(btn => {
-                if(btn.id !== 'mob-nav-ia') { // Não remove a cor do botão central
-                    btn.classList.remove('text-madalux-gold');
-                    btn.classList.add('text-gray-400');
+        // State Management with localStorage
+        const state = {
+            currentUser: JSON.parse(localStorage.getItem('madalux_current_user')) || null,
+            users: JSON.parse(localStorage.getItem('madalux_users')) || [
+                { id: 'usr_admin', name: 'Administrador Madalux', email: 'lucasgabriel.leite3@gmail.com', password: 'admin123', role: 'admin', status: 'approved', date: new Date().toISOString() }
+            ],
+            outboxEmails: JSON.parse(localStorage.getItem('madalux_outbox')) || [],
+            currentTab: 'dashboard',
+            isDark: true,
+            isPrivate: false,
+            accounts: [],
+            transactions: [],
+            goals: [
+                { id: 'g1', title: 'Reserva de Emergência', target: 50000, current: 0, deadline: '2026-12-31', category: 'Segurança' },
+                { id: 'g2', title: 'Expansão Patrimonial Global', target: 250000, current: 0, deadline: '2027-12-31', category: 'Patrimônio' },
+                { id: 'g3', title: 'Aquisição de Ativo Imobiliário', target: 1200000, current: 0, deadline: '2029-06-30', category: 'Imóveis' }
+            ],
+            aiChat: [
+                { 
+                    role: 'assistant', 
+                    content: 'Olá! Sou o seu Consultor Financeiro Inteligente da Madalux. O sistema encontra-se totalmente limpo e pronto para receber suas informações. Posso cadastrar suas contas bancárias, registrar receitas ou despesas conversando naturalmente, ou consultar cotações em tempo real. Como posso auxiliar em sua gestão patrimonial hoje?' 
                 }
-            });
-            const mobBtn = document.getElementById('mob-nav-' + tabId);
-            if(mobBtn && mobBtn.id !== 'mob-nav-ia') {
-                mobBtn.classList.remove('text-gray-400');
-                mobBtn.classList.add('text-madalux-gold');
-            }
+            ],
+            pendingAction: null,
+            authView: 'login' // 'login' or 'register' or 'pending'
+        };
 
-            // Inicializar gráfico se for aba de relatórios
-            if(tabId === 'relatorios') initChart();
+        const navItemsAdmin = [
+            { id: 'dashboard', label: 'Dashboard', icon: 'layout-dashboard' },
+            { id: 'transactions', label: 'Receitas & Despesas', icon: 'wallet' },
+            { id: 'accounts', label: 'Contas & Bancos', icon: 'landmark' },
+            { id: 'goals', label: 'Metas Financeiras', icon: 'target' },
+            { id: 'ai-assistant', label: 'Consultor IA Madalux', icon: 'bot', badge: 'PRO' },
+            { id: 'market', label: 'Mercado Financeiro', icon: 'trending-up' },
+            { id: 'reports', label: 'Relatórios & Gráficos', icon: 'pie-chart' },
+            { id: 'admin-panel', label: 'Painel de Aprovação', icon: 'shield-alert', badge: 'ADMIN' },
+            { id: 'settings', label: 'Configurações', icon: 'settings' }
+        ];
+
+        const navItemsUser = [
+            { id: 'dashboard', label: 'Dashboard', icon: 'layout-dashboard' },
+            { id: 'transactions', label: 'Receitas & Despesas', icon: 'wallet' },
+            { id: 'accounts', label: 'Contas & Bancos', icon: 'landmark' },
+            { id: 'goals', label: 'Metas Financeiras', icon: 'target' },
+            { id: 'ai-assistant', label: 'Consultor IA Madalux', icon: 'bot', badge: 'PRO' },
+            { id: 'market', label: 'Mercado Financeiro', icon: 'trending-up' },
+            { id: 'reports', label: 'Relatórios & Gráficos', icon: 'pie-chart' },
+            { id: 'settings', label: 'Configurações', icon: 'settings' }
+        ];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadUserData();
+            renderApp();
+            lucide.createIcons();
+        });
+
+        function saveToStorage() {
+            localStorage.setItem('madalux_users', JSON.stringify(state.users));
+            localStorage.setItem('madalux_current_user', JSON.stringify(state.currentUser));
+            localStorage.setItem('madalux_outbox', JSON.stringify(state.outboxEmails));
+            if (state.currentUser) {
+                localStorage.setItem(`madalux_accounts_${state.currentUser.id}`, JSON.stringify(state.accounts));
+                localStorage.setItem(`madalux_transactions_${state.currentUser.id}`, JSON.stringify(state.transactions));
+            }
         }
 
-        // Sistema de Privacidade (Ocultar Valores)
-        let isPrivacyOn = false;
-        function togglePrivacy() {
-            isPrivacyOn = !isPrivacyOn;
-            document.body.classList.toggle('privacy-on', isPrivacyOn);
-            const icon = document.getElementById('privacy-icon');
-            icon.setAttribute('data-lucide', isPrivacyOn ? 'eye-off' : 'eye');
+        function loadUserData() {
+            if (state.currentUser) {
+                const accs = localStorage.getItem(`madalux_accounts_${state.currentUser.id}`);
+                const txs = localStorage.getItem(`madalux_transactions_${state.currentUser.id}`);
+                state.accounts = accs ? JSON.parse(accs) : [];
+                state.transactions = txs ? JSON.parse(txs) : [];
+            }
+        }
+
+        function renderApp() {
+            const root = document.getElementById('app-root');
+            
+            if (!state.currentUser) {
+                root.innerHTML = renderAuthScreen();
+                lucide.createIcons();
+                return;
+            }
+
+            if (state.currentUser.status === 'pending') {
+                root.innerHTML = renderPendingScreen();
+                lucide.createIcons();
+                return;
+            }
+            if (state.currentUser.status === 'rejected') {
+                root.innerHTML = renderRejectedScreen();
+                lucide.createIcons();
+                return;
+            }
+
+            const navs = state.currentUser.role === 'admin' ? navItemsAdmin : navItemsUser;
+            
+            root.innerHTML = `
+                <!-- Mobile Header -->
+                <header class="md:hidden flex items-center justify-between p-4 bg-surface-light dark:bg-grafite border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 flex items-center justify-center overflow-hidden">
+                            <img src="${LOGO_URL}" alt="Madalux" class="w-full h-full object-contain drop-shadow-[0_0_10px_rgba(212,177,106,0.3)]">
+                        </div>
+                        <div>
+                            <h1 class="text-[10px] uppercase tracking-widest text-gold font-semibold">Madalux</h1>
+                            <span class="text-xs font-bold">Wealth Pro</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="togglePrivacy()" class="p-2 rounded-lg bg-slate-100 dark:bg-grafite-light text-slate-600 dark:text-slate-300 hover:text-gold transition" title="Privacidade">
+                            <i data-lucide="eye" id="mobile-privacy-icon" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="toggleTheme()" class="p-2 rounded-lg bg-slate-100 dark:bg-grafite-light text-slate-600 dark:text-slate-300 hover:text-gold transition" title="Tema">
+                            <i data-lucide="sun" id="mobile-theme-icon" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="toggleMobileMenu()" class="p-2 rounded-lg bg-slate-100 dark:bg-grafite-light text-slate-600 dark:text-slate-300">
+                            <i data-lucide="menu" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Mobile Bottom Navigation Bar -->
+                <div class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface-light dark:bg-grafite border-t border-slate-200 dark:border-slate-800 px-3 py-2 flex justify-around items-center shadow-2xl">
+                    <button onclick="switchTab('dashboard')" class="flex flex-col items-center space-y-1 ${state.currentTab==='dashboard'?'text-gold':'text-slate-500 dark:text-slate-400'} transition">
+                        <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                        <span class="text-[10px]">Início</span>
+                    </button>
+                    <button onclick="switchTab('transactions')" class="flex flex-col items-center space-y-1 ${state.currentTab==='transactions'?'text-gold':'text-slate-500 dark:text-slate-400'} transition">
+                        <i data-lucide="wallet" class="w-5 h-5"></i>
+                        <span class="text-[10px]">Extrato</span>
+                    </button>
+                    <button onclick="switchTab('ai-assistant')" class="flex flex-col items-center space-y-1 text-gold font-bold transition relative -top-3 bg-navy dark:bg-grafite-dark p-3 rounded-full border border-gold/40 shadow-xl">
+                        <i data-lucide="bot" class="w-6 h-6 text-gold"></i>
+                    </button>
+                    <button onclick="switchTab('market')" class="flex flex-col items-center space-y-1 ${state.currentTab==='market'?'text-gold':'text-slate-500 dark:text-slate-400'} transition">
+                        <i data-lucide="trending-up" class="w-5 h-5"></i>
+                        <span class="text-[10px]">Mercado</span>
+                    </button>
+                    <button onclick="toggleMobileMenu()" class="flex flex-col items-center space-y-1 text-slate-500 dark:text-slate-400 hover:text-gold transition">
+                        <i data-lucide="menu" class="w-5 h-5"></i>
+                        <span class="text-[10px]">Menu</span>
+                    </button>
+                </div>
+
+                <!-- Mobile Menu Overlay -->
+                <div id="mobile-menu" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden md:hidden flex justify-end">
+                    <div class="w-72 bg-surface-light dark:bg-grafite h-full p-6 flex flex-col justify-between border-l border-slate-200 dark:border-slate-800 shadow-2xl overflow-y-auto">
+                        <div>
+                            <div class="flex items-center justify-between mb-6">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 flex items-center justify-center">
+                                        <img src="${LOGO_URL}" alt="Madalux" class="w-full h-full object-contain">
+                                    </div>
+                                    <span class="font-bold text-sm tracking-wider">Madalux</span>
+                                </div>
+                                <button onclick="toggleMobileMenu()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-100">
+                                    <i data-lucide="x" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                            <nav class="space-y-1">
+                                ${navs.map(i => `
+                                    <button onclick="switchTab('${i.id}'); toggleMobileMenu();" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-medium ${state.currentTab===i.id?'bg-gold/20 text-gold':'text-slate-400'}">
+                                        <i data-lucide="${i.icon}" class="w-4 h-4"></i><span>${i.label}</span>
+                                    </button>
+                                `).join('')}
+                            </nav>
+                        </div>
+                        <div class="pt-4 border-t border-slate-200 dark:border-slate-700/50 pb-20">
+                            <button onclick="logout()" class="w-full py-2 bg-red-500/10 text-red-400 rounded-xl font-semibold text-xs flex items-center justify-center space-x-2">
+                                <i data-lucide="log-out" class="w-4 h-4"></i><span>Encerrar Sessão</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar Desktop -->
+                <aside class="hidden md:flex flex-col w-72 bg-surface-light dark:bg-grafite border-r border-slate-200 dark:border-slate-800 p-6 shrink-0 sticky top-0 h-screen transition-colors duration-300">
+                    <div class="flex flex-col items-center justify-center mb-8 pb-6 border-b border-gold/10">
+                        <img src="${LOGO_URL}" alt="Madalux" class="h-20 object-contain drop-shadow-[0_0_15px_rgba(212,177,106,0.2)] mb-3">
+                        <span class="text-xs uppercase tracking-widest text-gold font-semibold block">Madalux</span>
+                        <span class="text-[10px] text-slate-400 font-medium">Wealth Management</span>
+                    </div>
+
+                    <nav class="space-y-1.5 flex-1 overflow-y-auto pr-1">
+                        ${navs.map(i => `
+                            <button onclick="switchTab('${i.id}')" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${state.currentTab===i.id ? 'bg-gradient-to-r from-navy dark:from-grafite-light to-navy/80 text-gold border border-gold/30 shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-grafite-light/50'}">
+                                <div class="flex items-center space-x-3">
+                                    <i data-lucide="${i.icon}" class="w-4 h-4 ${state.currentTab===i.id ? 'text-gold' : 'text-slate-400'}"></i>
+                                    <span>${i.label}</span>
+                                </div>
+                                ${i.badge ? `<span class="px-1.5 py-0.5 text-[9px] bg-gold/20 text-gold font-bold rounded">${i.badge}</span>` : ''}
+                            </button>
+                        `).join('')}
+                    </nav>
+
+                    <div class="pt-4 mt-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
+                        <div class="flex items-center justify-between bg-slate-100 dark:bg-grafite-dark p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 transition-colors">
+                            <button onclick="togglePrivacy()" class="flex-1 py-1.5 px-2 rounded-lg text-xs font-medium flex items-center justify-center space-x-1.5 text-slate-600 dark:text-slate-300 hover:text-gold transition">
+                                <i data-lucide="eye" id="desktop-privacy-icon" class="w-4 h-4"></i>
+                                <span id="privacy-text">Privacidade</span>
+                            </button>
+                            <button onclick="toggleTheme()" class="py-1.5 px-2.5 rounded-lg text-xs font-medium flex items-center justify-center bg-white dark:bg-grafite text-slate-700 dark:text-slate-200 shadow-sm transition">
+                                <i data-lucide="sun" id="desktop-theme-icon" class="w-4 h-4 text-gold"></i>
+                            </button>
+                        </div>
+                        <div class="flex items-center justify-between px-2 pt-2">
+                            <div class="truncate pr-2">
+                                <p class="text-xs font-bold truncate">${state.currentUser.name}</p>
+                                <p class="text-[10px] text-slate-400 truncate">${state.currentUser.email}</p>
+                            </div>
+                            <button onclick="logout()" class="p-2 text-slate-400 hover:text-red-400 transition" title="Sair"><i data-lucide="log-out" class="w-4 h-4"></i></button>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- Main Content Area -->
+                <main class="flex-1 flex flex-col min-w-0 overflow-y-auto h-screen pb-24 md:pb-8">
+                    <header class="hidden md:flex items-center justify-between px-8 py-5 bg-surface-light/80 dark:bg-grafite/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 transition-colors duration-300">
+                        <div>
+                            <h2 id="page-title" class="text-xl font-bold tracking-tight text-gold">Dashboard Financeiro</h2>
+                            <p id="page-subtitle" class="text-xs text-slate-500 dark:text-slate-400">Painel executivo Madalux com inteligência artificial conversacional integrada.</p>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <button onclick="openModal('transaction')" class="px-4 py-2 bg-gradient-to-r from-emerald to-emerald-light hover:opacity-95 text-white text-xs font-semibold rounded-xl shadow-lg shadow-emerald/20 flex items-center space-x-2 transition">
+                                <i data-lucide="plus" class="w-4 h-4"></i>
+                                <span>Nova Transação</span>
+                            </button>
+                            <div class="w-10 h-10 rounded-full border border-gold/30 flex items-center justify-center bg-grafite overflow-hidden">
+                                <img src="${LOGO_URL}" class="h-6 object-contain">
+                            </div>
+                        </div>
+                    </header>
+
+                    <div id="app-content" class="p-4 md:p-8 flex-1 max-w-7xl w-full mx-auto space-y-6"></div>
+                </main>
+            `;
+
+            if(state.isPrivate) {
+                document.body.classList.add('privacy-on');
+                const iMobile = document.getElementById('mobile-privacy-icon');
+                const iDesktop = document.getElementById('desktop-privacy-icon');
+                if(iMobile) iMobile.setAttribute('data-lucide', 'eye-off');
+                if(iDesktop) iDesktop.setAttribute('data-lucide', 'eye-off');
+            }
+
+            renderTabContent();
             lucide.createIcons();
         }
 
-        // Alternar Modo Claro / Escuro
+        // --- Auth Screens ---
+        function renderAuthScreen() {
+            if (state.authView === 'register') {
+                return `
+                    <div class="w-full min-h-screen flex items-center justify-center p-4 bg-background-light dark:bg-background-dark">
+                        <div class="bg-surface-light dark:bg-grafite border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md p-8 shadow-2xl space-y-6">
+                            <div class="text-center space-y-2 flex flex-col items-center">
+                                <img src="${LOGO_URL}" alt="Madalux" class="h-20 object-contain drop-shadow-[0_0_15px_rgba(212,177,106,0.3)] mb-2">
+                                <h1 class="text-xl font-bold tracking-tight text-gold">Criar Conta Madalux</h1>
+                                <p class="text-xs text-slate-400">Plataforma financeira de luxo e inteligência patrimonial.</p>
+                            </div>
+                            <form onsubmit="handleRegister(event)" class="space-y-4 text-xs">
+                                <div>
+                                    <label class="block font-medium mb-1 text-slate-400">Nome Completo</label>
+                                    <input type="text" id="reg-name" required class="w-full p-3 bg-slate-100 dark:bg-grafite-dark border border-slate-700/60 rounded-xl focus:outline-none focus:border-gold">
+                                </div>
+                                <div>
+                                    <label class="block font-medium mb-1 text-slate-400">E-mail</label>
+                                    <input type="email" id="reg-email" required class="w-full p-3 bg-slate-100 dark:bg-grafite-dark border border-slate-700/60 rounded-xl focus:outline-none focus:border-gold">
+                                </div>
+                                <div>
+                                    <label class="block font-medium mb-1 text-slate-400">Senha Segura</label>
+                                    <input type="password" id="reg-password" required class="w-full p-3 bg-slate-100 dark:bg-grafite-dark border border-slate-700/60 rounded-xl focus:outline-none focus:border-gold">
+                                </div>
+                                <button type="submit" class="w-full py-3 bg-gold text-slate-950 font-bold rounded-xl hover:bg-gold-light transition shadow-lg shadow-gold/10">Solicitar Acesso</button>
+                            </form>
+                            <div class="text-center pt-2">
+                                <button onclick="state.authView='login'; renderApp();" class="text-xs text-gold hover:underline">Já possui uma conta? Faça login</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="w-full min-h-screen flex items-center justify-center p-4 bg-background-light dark:bg-background-dark">
+                    <div class="bg-surface-light dark:bg-grafite border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md p-8 shadow-2xl space-y-6">
+                        <div class="text-center space-y-2 flex flex-col items-center">
+                            <img src="${LOGO_URL}" alt="Madalux" class="h-20 object-contain drop-shadow-[0_0_15px_rgba(212,177,106,0.3)] mb-2">
+                            <h1 class="text-xl font-bold tracking-tight text-gold">Madalux Wealth</h1>
+                            <p class="text-xs text-slate-400">Entre com suas credenciais para acessar sua conta.</p>
+                        </div>
+                        <form onsubmit="handleLogin(event)" class="space-y-4 text-xs">
+                            <div>
+                                <label class="block font-medium mb-1 text-slate-400">E-mail</label>
+                                <input type="email" id="login-email" required class="w-full p-3 bg-slate-100 dark:bg-grafite-dark border border-slate-700/60 rounded-xl focus:outline-none focus:border-gold">
+                            </div>
+                            <div>
+                                <label class="block font-medium mb-1 text-slate-400">Senha</label>
+                                <input type="password" id="login-password" required class="w-full p-3 bg-slate-100 dark:bg-grafite-dark border border-slate-700/60 rounded-xl focus:outline-none focus:border-gold">
+                            </div>
+                            <button type="submit" class="w-full py-3 bg-gold text-slate-950 font-bold rounded-xl hover:bg-gold-light transition shadow-lg shadow-gold/10">Entrar na Plataforma</button>
+                        </form>
+                        <div class="text-center pt-4">
+                            <button onclick="state.authView='register'; renderApp();" class="text-xs text-gold hover:underline">Criar uma conta (Requer aprovação)</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderPendingScreen() {
+            return `
+                <div class="w-full min-h-screen flex items-center justify-center p-4 bg-background-light dark:bg-background-dark">
+                    <div class="bg-surface-light dark:bg-grafite border border-gold/40 rounded-2xl w-full max-w-md p-8 shadow-2xl space-y-6 text-center">
+                        <div class="w-16 h-16 mx-auto rounded-full bg-gold/10 border border-gold/50 flex items-center justify-center text-gold">
+                            <i data-lucide="clock" class="w-8 h-8"></i>
+                        </div>
+                        <h2 class="text-lg font-bold">Aguardando Aprovação</h2>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            Seu cadastro foi recebido com sucesso! 🔒 Seu acesso à Madalux está aguardando aprovação do administrador. Você receberá uma notificação em <strong>${state.currentUser.email}</strong> assim que sua solicitação for analisada por lucasgabriel.leite3@gmail.com.
+                        </p>
+                        <div class="pt-4 border-t border-slate-700/50 flex flex-col space-y-2">
+                            <button onclick="logout()" class="w-full py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-semibold text-xs">Sair</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderRejectedScreen() {
+            return `
+                <div class="w-full min-h-screen flex items-center justify-center p-4 bg-background-light dark:bg-background-dark">
+                    <div class="bg-surface-light dark:bg-grafite border border-red-500/40 rounded-2xl w-full max-w-md p-8 shadow-2xl space-y-6 text-center">
+                        <div class="w-16 h-16 mx-auto rounded-full bg-red-500/10 border border-red-500/50 flex items-center justify-center text-red-400">
+                            <i data-lucide="x-circle" class="w-8 h-8"></i>
+                        </div>
+                        <h2 class="text-lg font-bold text-red-400">Acesso Recusado</h2>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            Infelizmente sua solicitação de acesso à plataforma Madalux foi recusada pelo administrador.
+                        </p>
+                        <div class="pt-4 border-t border-slate-700/50">
+                            <button onclick="logout()" class="w-full py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-semibold text-xs">Voltar ao Login</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+
+            const user = state.users.find(u => u.email === email && u.password === password);
+            if (!user) {
+                showToast('E-mail ou senha incorretos.');
+                return;
+            }
+
+            state.currentUser = user;
+            loadUserData();
+            saveToStorage();
+            renderApp();
+            showToast(`Bem-vindo à Madalux, ${user.name}!`);
+        }
+
+        function handleRegister(e) {
+            e.preventDefault();
+            const name = document.getElementById('reg-name').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const password = document.getElementById('reg-password').value;
+
+            if (state.users.some(u => u.email === email)) {
+                showToast('Este e-mail já está cadastrado.');
+                return;
+            }
+
+            // Se for o email do admin, aprova direto (apenas como fallback caso ele delete a conta base)
+            const isAdmin = email === 'lucasgabriel.leite3@gmail.com';
+
+            const newUser = {
+                id: 'usr_' + Date.now(),
+                name,
+                email,
+                password,
+                role: isAdmin ? 'admin' : 'user',
+                status: isAdmin ? 'approved' : 'pending',
+                date: new Date().toISOString()
+            };
+
+            state.users.push(newUser);
+            state.currentUser = newUser;
+            
+            if (!isAdmin) {
+                state.outboxEmails.push({
+                    id: 'email_' + Date.now(),
+                    to: 'lucasgabriel.leite3@gmail.com',
+                    subject: `Nova Solicitação de Acesso — ${name}`,
+                    body: `O usuário ${name} (${email}) solicitou acesso à plataforma Madalux em ${new Date().toLocaleString('pt-BR')}. Acesse o painel para aprovar ou recusar.`,
+                    userId: newUser.id,
+                    date: new Date().toLocaleString('pt-BR'),
+                    status: 'sent'
+                });
+            }
+
+            saveToStorage();
+            renderApp();
+            if(!isAdmin) showToast('Cadastro realizado! Aguardando aprovação.');
+        }
+
+        function logout() {
+            state.currentUser = null;
+            state.authView = 'login';
+            saveToStorage();
+            renderApp();
+            showToast('Sessão encerrada.');
+        }
+
+        function switchTab(tabId) {
+            state.currentTab = tabId;
+            renderApp();
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+        }
+
         function toggleTheme() {
-            const htmlClasses = document.documentElement.classList;
-            htmlClasses.toggle('dark');
-            const isDark = htmlClasses.contains('dark');
-            
-            const icon = document.getElementById('theme-icon');
-            const text = document.getElementById('theme-text');
-            
-            if (isDark) {
-                if(icon) icon.setAttribute('data-lucide', 'moon');
-                if(text) text.innerText = 'Modo Claro';
+            state.isDark = !state.isDark;
+            const html = document.documentElement;
+            if (state.isDark) {
+                html.classList.add('dark');
             } else {
-                if(icon) icon.setAttribute('data-lucide', 'sun');
-                if(text) text.innerText = 'Modo Escuro';
+                html.classList.remove('dark');
+            }
+            renderApp();
+        }
+
+        function togglePrivacy() {
+            state.isPrivate = !state.isPrivate;
+            if(state.isPrivate) {
+                document.body.classList.add('privacy-on');
+            } else {
+                document.body.classList.remove('privacy-on');
+            }
+            renderApp();
+        }
+
+        function toggleMobileMenu() {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').innerText = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3500);
+        }
+
+        function renderTabContent() {
+            const container = document.getElementById('app-content');
+            if (!container) return;
+
+            const titles = {
+                'dashboard': { title: 'Dashboard Financeiro', subtitle: 'Painel executivo e inteligência patrimonial Madalux.' },
+                'transactions': { title: 'Controle de Receitas & Despesas', subtitle: 'Gerencie entradas, saídas e extrato detalhado.' },
+                'accounts': { title: 'Contas Bancárias & Instituições', subtitle: 'Cadastre e gerencie suas contas e saldos patrimoniais.' },
+                'goals': { title: 'Planejamento de Metas', subtitle: 'Acompanhe a evolução dos seus objetivos patrimoniais.' },
+                'ai-assistant': { title: 'Consultor Financeiro por IA Madalux', subtitle: 'Assistente pessoal conversacional avançado com execução de operações.' },
+                'market': { title: 'Mercado Financeiro & Cotações', subtitle: 'Indicadores macroeconômicos e ativos em tempo real.' },
+                'reports': { title: 'Relatórios & Gráficos Analíticos', subtitle: 'Análise de fluxo de caixa e evolução patrimonial.' },
+                'admin-panel': { title: 'Painel de Aprovação de Usuários', subtitle: 'Gerencie solicitações de acesso e permissões de segurança.' },
+                'settings': { title: 'Configurações do Sistema', subtitle: 'Preferências de perfil e segurança da conta.' }
+            };
+
+            if (titles[state.currentTab]) {
+                const pTitle = document.getElementById('page-title');
+                const pSub = document.getElementById('page-subtitle');
+                if (pTitle) pTitle.innerText = titles[state.currentTab].title;
+                if (pSub) pSub.innerText = titles[state.currentTab].subtitle;
+            }
+
+            switch (state.currentTab) {
+                case 'dashboard':
+                    container.innerHTML = renderDashboard();
+                    initDashboardCharts();
+                    break;
+                case 'transactions':
+                    container.innerHTML = renderTransactions();
+                    break;
+                case 'accounts':
+                    container.innerHTML = renderAccounts();
+                    break;
+                case 'goals':
+                    container.innerHTML = renderGoals();
+                    break;
+                case 'ai-assistant':
+                    container.innerHTML = renderAIAssistant();
+                    scrollToBottomChat();
+                    break;
+                case 'market':
+                    container.innerHTML = renderMarket();
+                    break;
+                case 'reports':
+                    container.innerHTML = renderReports();
+                    initReportsCharts();
+                    break;
+                case 'admin-panel':
+                    if (state.currentUser.role === 'admin') {
+                        container.innerHTML = renderAdminPanel();
+                    } else {
+                        container.innerHTML = `<div class="p-8 text-center text-red-400">Acesso negado. Área restrita ao administrador.</div>`;
+                    }
+                    break;
+                case 'settings':
+                    container.innerHTML = renderSettings();
+                    break;
             }
             lucide.createIcons();
         }
 
-        // Menu Mobile Auxiliar
-        function toggleMobileMenu() {
-            const menu = document.getElementById('mobile-menu-overlay');
-            menu.classList.toggle('hidden');
+        // --- Dashboard Module ---
+        function renderDashboard() {
+            const totalBalance = state.accounts.reduce((a, b) => a + b.balance, 0);
+            const totalIncome = state.transactions.filter(t => t.type === 'income').reduce((a, b) => a + b.amount, 0);
+            const totalExpense = state.transactions.filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0);
+            const netResult = totalIncome - totalExpense;
+
+            return `
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div onclick="switchTab('accounts')" class="bg-surface-light dark:bg-grafite border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm relative overflow-hidden transition-all hover:border-gold/50 cursor-pointer group">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider group-hover:text-gold transition">Patrimônio Líquido</span>
+                            <div class="w-8 h-8 rounded-lg bg-gold/10 text-gold flex items-center justify-center"><i data-lucide="shield-check" class="w-4 h-4"></i></div>
+                        </div>
+                        <h3 class="text-2xl font-bold tracking-tight financial-value">${formatCurrency(totalBalance)}</h3>
+                        <p class="text-[11px] text-emerald-500 mt-2 flex items-center"><i data-lucide="trending-up" class="w-3 h-3 mr-1"></i> ${state.accounts.length === 0 ? 'Nenhuma conta cadastrada' : 'Atualizado pelas contas'}</p>
+                    </div>
+
+                    <div onclick="switchTab('transactions')" class="bg-surface-light dark:bg-grafite border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm transition-all hover:border-emerald/50 cursor-pointer group">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider group-hover:text-emerald-500 transition">Receitas do Mês</span>
+                            <div class="w-8 h-8 rounded-lg bg-emerald/10 text-emerald-500 flex items-center justify-center"><i data-lucide="arrow-down-left" class="w-4 h-4"></i></div>
+                        </div>
+                        <h3 class="text-2xl font-bold tracking-tight text-emerald-500 financial-value">${formatCurrency(totalIncome)}</h3>
+                        <p class="text-[11px] text-slate-400 mt-2">Entradas confirmadas</p>
+                    </div>
+
+                    <div onclick="switchTab('transactions')" class="bg-surface-light dark:bg-grafite border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm transition-all hover:border-red-500/50 cursor-pointer group">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider group-hover:text-red-500 transition">Despesas do Mês</span>
+                            <div class="w-8 h-8 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center"><i data-lucide="arrow-up-right" class="w-4 h-4"></i></div>
+                        </div>
+                        <h3 class="text-2xl font-bold tracking-tight text-red-500 financial-value">${formatCurrency(totalExpense)}</h3>
+                        <p class="text-[11px] text-slate-400 mt-2">Saídas contabilizadas</p>
+                    </div>
+
+                    <div onclick="switchTab('reports')" class="bg-surface-light dark:bg-grafite border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm transition-all hover:border-blue-500/50 cursor-pointer group">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider group-hover:text-blue-500 transition">Resultado Líquido</span>
+                            <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center"><i data-lucide="activity" class="w-4 h-4"></i></div>
+                        </div>
+                        <h3 class="text-2xl font-bold tracking-tight ${netResult >= 0 ? 'text-emerald-500' : 'text-red-500'} financial-value">${formatCurrency(netResult)}</h3>
+                        <p class="text-[11px] text-slate-400 mt-2">Balanço do período</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 bg-surface-light dark:bg-grafite border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm transition-colors">
+                        <div class="flex items-center justify-between mb-6">
+                            <div><h4 class="text-sm font-bold">Fluxo de Caixa Consolidado</h4><p class="text-xs text-slate-400">Receitas vs Despesas</p></div>
+                            <span class="px-3 py-1 text-[11px] bg-slate-100 dark:bg-grafite-dark rounded-lg text-slate-400 font-medium">Ano Atual</span>
+                        </div>
+                        ${state.transactions.length === 0 ? `<div class="h-72 flex items-center justify-center text-slate-500 text-xs">Sem dados suficientes. Cadastre transações.</div>` : `<div class="h-72 relative"><canvas id="cashflowChart"></canvas></div>`}
+                    </div>
+
+                    <div class="bg-surface-light dark:bg-grafite border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm flex flex-col justify-between transition-colors">
+                        <div>
+                            <h4 class="text-sm font-bold mb-1">Distribuição de Gastos</h4>
+                            <p class="text-xs text-slate-400 mb-4">Por categoria principal</p>
+                            ${state.transactions.length === 0 ? `<div class="h-48 flex items-center justify-center text-slate-500 text-xs">Sem dados suficientes.</div>` : `<div class="h-48 relative flex items-center justify-center"><canvas id="categoriesChart"></canvas></div>`}
+                        </div>
+                    </div>
+                </div>
+            `;
         }
 
-        // Chat IA Lógica Simulada
-        const chatMessages = document.getElementById('chat-messages');
-        const chatInput = document.getElementById('chat-input');
+        function initDashboardCharts() {
+            if (state.transactions.length === 0) return;
+            const isDark = document.documentElement.classList.contains('dark');
+            const tc = isDark ? '#94a3b8' : '#64748b';
+            const gc = isDark ? '#33415540' : '#e2e8f080';
 
-        function appendMessage(text, sender) {
-            const div = document.createElement('div');
-            div.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
-            const bubble = document.createElement('div');
-            bubble.className = `max-w-[85%] md:max-w-[70%] p-3 md:p-4 text-sm shadow-md ${sender === 'user' ? 'chat-user' : 'chat-ai'}`;
-            bubble.innerHTML = text;
-            div.appendChild(bubble);
-            chatMessages.appendChild(div);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            const c1 = document.getElementById('cashflowChart');
+            if (c1) {
+                new Chart(c1, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
+                        datasets: [
+                            { label: 'Receitas', data: [0, 0, 0, 0, 0, state.transactions.filter(t=>t.type==='income').reduce((a,b)=>a+b.amount,0)], backgroundColor: '#087F5B', borderRadius: 6 },
+                            { label: 'Despesas', data: [0, 0, 0, 0, 0, state.transactions.filter(t=>t.type==='expense').reduce((a,b)=>a+b.amount,0)], backgroundColor: '#ef4444', borderRadius: 6 }
+                        ]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom', labels: { color: tc, font: { size: 11 } } } },
+                        scales: { x: { grid: { display: false }, ticks: { color: tc } }, y: { grid: { color: gc }, ticks: { color: tc } } }
+                    }
+                });
+            }
+
+            const c2 = document.getElementById('categoriesChart');
+            if (c2) {
+                new Chart(c2, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Alimentação', 'Moradia', 'Outros'],
+                        datasets: [{ data: [33, 33, 34], backgroundColor: ['#087F5B', '#3b82f6', '#D4B16A'], borderWidth: 0 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: tc, font: { size: 10 } } } }, cutout: '70%' }
+                });
+            }
+        }
+
+        // --- Accounts Module ---
+        function renderAccounts() {
+            const totalBalance = state.accounts.reduce((a, b) => a + b.balance, 0);
+            return `
+                <div class="space-y-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
+                        <div>
+                            <h3 class="text-base font-bold">Contas & Instituições Madalux</h3>
+                            <p class="text-xs text-slate-400">Cadastre e gerencie suas contas bancárias e carteiras.</p>
+                        </div>
+                        <div class="flex items-center space-x-3 w-full sm:w-auto">
+                            <button onclick="document.getElementById('modal-openfinance').classList.remove('hidden')" class="flex-1 sm:flex-none px-4 py-2 bg-gold hover:bg-gold-light text-slate-900 text-xs font-bold rounded-xl shadow-md transition flex items-center justify-center space-x-2">
+                                <i data-lucide="link" class="w-4 h-4"></i><span>Open Finance</span>
+                            </button>
+                            <button onclick="openModal('account')" class="flex-1 sm:flex-none px-4 py-2 bg-emerald hover:bg-emerald-light text-white text-xs font-semibold rounded-xl shadow-md transition flex items-center justify-center space-x-2">
+                                <i data-lucide="plus" class="w-4 h-4"></i><span>Nova Conta</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-surface-light dark:bg-grafite border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm flex items-center justify-between transition-colors">
+                        <div>
+                            <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Patrimônio Líquido Total em Contas</span>
+                            <h3 class="text-2xl font-bold mt-1 text-gold financial-value">${formatCurrency(totalBalance)}</h3>
+                        </div>
+                        <div class="w-12 h-12 rounded-xl bg-gold/10 text-gold flex items-center justify-center">
+                            <i data-lucide="landmark" class="w-6 h-6"></i>
+                        </div>
+                    </div>
+
+                    ${state.accounts.length === 0 ? `
+                        <div class="bg-surface-light dark:bg-grafite border border-dashed border-slate-300 dark:border-slate-700 p-8 rounded-2xl text-center space-y-3 transition-colors">
+                            <div class="w-10 h-10 bg-gold/10 text-gold rounded-full flex items-center justify-center mx-auto"><i data-lucide="landmark" class="w-5 h-5"></i></div>
+                            <h4 class="text-sm font-bold">Nenhuma conta cadastrada</h4>
+                            <p class="text-xs text-slate-400">Adicione suas contas correntes ou conecte-se via Open Finance para automatizar seu patrimônio.</p>
+                        </div>
+                    ` : `
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            ${state.accounts.map(acc => `
+                                <div class="bg-surface-light dark:bg-grafite border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm flex flex-col justify-between transition-colors relative group">
+                                    <div>
+                                        <div class="flex justify-between items-start mb-4">
+                                            <div class="w-10 h-10 rounded-xl bg-gold/10 text-gold flex items-center justify-center"><i data-lucide="landmark" class="w-5 h-5"></i></div>
+                                            <div class="flex items-center space-x-1">
+                                                <button onclick="openModal('account', '${acc.id}')" class="p-1.5 text-slate-400 hover:text-gold transition" title="Editar"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                                                <button onclick="deleteAccount('${acc.id}')" class="p-1.5 text-slate-400 hover:text-red-400 transition" title="Excluir"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                            </div>
+                                        </div>
+                                        <h4 class="text-sm font-bold mb-1">${acc.name}</h4>
+                                        <p class="text-xs text-slate-400">${acc.institution} • <span class="uppercase">${acc.type}</span></p>
+                                    </div>
+                                    <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between items-end">
+                                        <div>
+                                            <span class="text-[10px] text-slate-400 uppercase">Saldo Atual</span>
+                                            <p class="text-base font-bold mt-0.5 financial-value">${formatCurrency(acc.balance)}</p>
+                                        </div>
+                                        <span class="text-[10px] text-slate-400">Data: ${acc.date ? acc.date.split('-').reverse().join('/') : '-'}</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+
+        // --- Transactions Module ---
+        function renderTransactions() {
+            return `
+                <div class="bg-surface-light dark:bg-grafite border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm space-y-6 transition-colors">
+                    <div class="flex justify-between items-center">
+                        <div><h3 class="text-base font-bold">Extrato de Movimentações</h3><p class="text-xs text-slate-400">Histórico completo de entradas e saídas.</p></div>
+                        <button onclick="openModal('transaction')" class="px-4 py-2 bg-emerald hover:bg-emerald-light text-white text-xs font-semibold rounded-xl shadow-md transition flex items-center space-x-2">
+                            <i data-lucide="plus" class="w-4 h-4"></i><span>Nova Transação</span>
+                        </button>
+                    </div>
+
+                    ${state.transactions.length === 0 ? `
+                        <div class="text-center py-12 text-slate-400 text-xs">Nenhuma transação registrada. O sistema está pronto para receber seus dados.</div>
+                    ` : `
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead>
+                                    <tr class="text-slate-400 border-b border-slate-200 dark:border-slate-800 pb-3">
+                                        <th class="pb-3 font-medium">Descrição</th>
+                                        <th class="pb-3 font-medium">Categoria</th>
+                                        <th class="pb-3 font-medium">Data</th>
+                                        <th class="pb-3 font-medium">Status</th>
+                                        <th class="pb-3 font-medium text-right">Valor</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/50">
+                                    ${state.transactions.map(t => `
+                                        <tr class="hover:bg-slate-50 dark:hover:bg-grafite-light/20 transition">
+                                            <td class="py-3.5 font-medium flex items-center space-x-2">
+                                                <div class="w-7 h-7 rounded-lg ${t.type === 'income' ? 'bg-emerald/10 text-emerald-500' : 'bg-red-500/10 text-red-500'} flex items-center justify-center">
+                                                    <i data-lucide="${t.type === 'income' ? 'arrow-down-left' : 'arrow-up-right'}" class="w-3.5 h-3.5"></i>
+                                                </div>
+                                                <span>${t.description}</span>
+                                            </td>
+                                            <td class="py-3.5 text-slate-400">${t.category}</td>
+                                            <td class="py-3.5 text-slate-400">${t.date.split('-').reverse().join('/')}</td>
+                                            <td class="py-3.5"><span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald/10 text-emerald-500">${t.status.toUpperCase()}</span></td>
+                                            <td class="py-3.5 text-right font-bold financial-value ${t.type === 'income' ? 'text-emerald-500' : 'text-slate-200'}">${t.type === 'income' ? '+' : '-'} ${formatCurrency(t.amount)}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+
+        // --- Goals Module ---
+        function renderGoals() {
+            return `
+                <div class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div><h3 class="text-base font-bold">Metas & Planejamento Patrimonial</h3><p class="text-xs text-slate-400">Acompanhe seus objetivos.</p></div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        ${state.goals.map(g => {
+                            const p = g.target > 0 ? Math.min(100, Math.round((g.current / g.target) * 100)) : 0;
+                            return `
+                                <div class="bg-surface-light dark:bg-grafite border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm flex flex-col justify-between transition-colors">
+                                    <div>
+                                        <div class="flex justify-between items-start mb-3">
+                                            <span class="px-2.5 py-1 rounded text-[10px] font-semibold bg-gold/10 text-gold">${g.category}</span>
+                                            <span class="text-xs text-slate-400">${g.deadline.split('-').reverse().join('/')}</span>
+                                        </div>
+                                        <h4 class="text-sm font-bold mb-4">${g.title}</h4>
+                                        <div class="flex justify-between text-xs mb-1">
+                                            <span class="text-slate-400">Acumulado: <strong class="text-slate-100 financial-value">${formatCurrency(g.current)}</strong></span>
+                                            <span class="font-bold text-gold">${p}%</span>
+                                        </div>
+                                        <div class="w-full bg-slate-100 dark:bg-grafite-dark h-2 rounded-full overflow-hidden">
+                                            <div class="bg-gradient-to-r from-gold to-emerald h-full rounded-full" style="width: ${p}%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-400 flex justify-between">
+                                        <span class="financial-value">Meta: ${formatCurrency(g.target)}</span>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- Advanced AI Assistant Module ---
+        function renderAIAssistant() {
+            return `
+                <div class="bg-surface-light dark:bg-grafite border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm h-[calc(100vh-210px)] flex flex-col transition-colors">
+                    <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-navy to-grafite-dark border border-gold/40 flex items-center justify-center text-gold"><i data-lucide="bot" class="w-5 h-5"></i></div>
+                            <div>
+                                <h3 class="text-sm font-bold">Consultor Financeiro IA Madalux (PRO)</h3>
+                                <p class="text-[11px] text-emerald-500 flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span> Contexto Conversacional & Mercado Ativos</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="clearChat()" class="text-[11px] text-slate-400 hover:text-gold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-grafite-dark">Limpar Chat</button>
+                        </div>
+                    </div>
+
+                    <div class="px-4 py-2.5 bg-slate-50 dark:bg-grafite-dark/50 border-b border-slate-200 dark:border-slate-800 flex items-center space-x-2 overflow-x-auto text-[11px]">
+                        <span class="text-slate-400 shrink-0 font-medium">Sugestões:</span>
+                        <button onclick="sendQuickPrompt('Gastei 45 no almoço hoje')" class="px-3 py-1 bg-surface-light dark:bg-grafite border border-slate-200 dark:border-slate-700 rounded-full hover:border-gold shrink-0 transition">"Gastei 35 no almoço"</button>
+                        <button onclick="sendQuickPrompt('Recebi 1500 de consultoria')" class="px-3 py-1 bg-surface-light dark:bg-grafite border border-slate-200 dark:border-slate-700 rounded-full hover:border-gold shrink-0 transition">"Recebi 1500 de consultoria"</button>
+                        <button onclick="sendQuickPrompt('Se eu guardar 1000 por mês por 2 anos, quanto terei?')" class="px-3 py-1 bg-surface-light dark:bg-grafite border border-slate-200 dark:border-slate-700 rounded-full hover:border-gold shrink-0 transition">"Simular R$ 1.000/mês"</button>
+                        <button onclick="sendQuickPrompt('Como está a bolsa e o dólar hoje?')" class="px-3 py-1 bg-surface-light dark:bg-grafite border border-slate-200 dark:border-slate-700 rounded-full hover:border-gold shrink-0 transition">"Bolsa e dólar hoje"</button>
+                    </div>
+
+                    <div id="chat-messages" class="flex-1 p-6 overflow-y-auto space-y-4">
+                        ${state.aiChat.map((msg, index) => {
+                            if (msg.role === 'confirmation-card') {
+                                return `
+                                    <div class="flex justify-start">
+                                        <div class="max-w-md w-full bg-navy/95 dark:bg-grafite-dark border border-gold/40 rounded-2xl p-4 text-xs shadow-xl space-y-3">
+                                            <div class="flex items-center justify-between border-b border-slate-700/50 pb-2">
+                                                <span class="text-gold font-bold flex items-center"><i data-lucide="check-circle" class="w-4 h-4 mr-1.5"></i> Confirmação de Transação Madalux</span>
+                                                <span class="px-2 py-0.5 rounded text-[10px] uppercase font-semibold ${msg.data.type === 'income' ? 'bg-emerald/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}">${msg.data.type === 'income' ? 'Receita' : 'Despesa'}</span>
+                                            </div>
+                                            <div class="space-y-1.5 text-slate-200">
+                                                <p><strong>Descrição:</strong> ${msg.data.description}</p>
+                                                <p><strong>Valor:</strong> <span class="font-bold text-base financial-value ${msg.data.type === 'income' ? 'text-emerald-400' : 'text-red-400'}">${formatCurrency(msg.data.amount)}</span></p>
+                                                <p><strong>Categoria:</strong> ${msg.data.category}</p>
+                                                <p><strong>Data:</strong> ${msg.data.date.split('-').reverse().join('/')}</p>
+                                            </div>
+                                            <div class="pt-2 flex space-x-2">
+                                                <button onclick="confirmTransaction(${index})" class="flex-1 py-2 bg-emerald hover:bg-emerald-light text-white font-bold rounded-xl transition flex items-center justify-center space-x-1">
+                                                    <i data-lucide="check" class="w-4 h-4"></i><span>Confirmar</span>
+                                                </button>
+                                                <button onclick="cancelTransaction(${index})" class="py-2 px-4 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl transition">Cancelar</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            }
+                            return `
+                                <div class="flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}">
+                                    <div class="max-w-xl rounded-2xl p-4 text-xs leading-relaxed ${msg.role === 'user' ? 'bg-gold text-slate-950 font-medium rounded-br-none' : 'bg-slate-100 dark:bg-grafite-dark text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-800 rounded-bl-none'}">
+                                        ${msg.content}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+
+                    <div class="p-4 border-t border-slate-200 dark:border-slate-800 bg-surface-light dark:bg-grafite rounded-b-2xl transition-colors">
+                        <form onsubmit="handleChatSubmit(event)" class="flex items-center space-x-2">
+                            <input type="text" id="chat-input" placeholder="Digite sua pergunta ou comando financeiro..." class="flex-1 py-3 px-4 text-xs bg-slate-100 dark:bg-grafite-dark border border-slate-200 dark:border-slate-700/60 rounded-xl focus:outline-none focus:border-gold transition">
+                            <button type="submit" class="px-5 py-3 bg-gold text-slate-950 font-bold rounded-xl hover:bg-gold-light transition flex items-center space-x-1 text-xs">
+                                <span>Enviar</span><i data-lucide="send" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            `;
+        }
+
+        function scrollToBottomChat() {
+            setTimeout(() => {
+                const c = document.getElementById('chat-messages');
+                if (c) c.scrollTop = c.scrollHeight;
+            }, 50);
+        }
+
+        function sendQuickPrompt(text) {
+            document.getElementById('chat-input').value = text;
+            handleChatSubmit(new Event('submit'));
         }
 
         function handleChatSubmit(e) {
             e.preventDefault();
-            const text = chatInput.value.trim();
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
             if (!text) return;
 
-            appendMessage(text, 'user');
-            chatInput.value = '';
+            state.aiChat.push({ role: 'user', content: text });
+            input.value = '';
+            renderTabContent();
+            scrollToBottomChat();
 
-            // Simular tempo de resposta e lógica simples
             setTimeout(() => {
-                const textLower = text.toLowerCase();
-                
-                if (textLower.includes('gastei') || textLower.includes('comprei')) {
-                    // Simular cartão de confirmação de despesa
-                    const valueMatch = text.match(/\d+(?:,\d{1,2})?/);
-                    const val = valueMatch ? valueMatch[0] : 'XX,XX';
-                    
-                    const card = `
-                        <strong class="text-madalux-gold block mb-2"><i data-lucide="check-circle" class="inline w-4 h-4 mr-1"></i> Despesa Identificada</strong>
-                        Valor: <strong>R$ ${val}</strong><br>
-                        Categoria: Alimentação (Sugestão)<br>
-                        <div class="mt-3 flex space-x-2">
-                            <button class="px-3 py-1.5 bg-madalux-emerald text-white rounded text-xs font-bold" onclick="alert('Registrado no banco de dados!')">Confirmar</button>
-                            <button class="px-3 py-1.5 border border-gray-500 text-gray-300 rounded text-xs" onclick="alert('Cancelado.')">Cancelar</button>
-                        </div>
-                    `;
-                    appendMessage(card, 'ai');
-                    lucide.createIcons();
-                } 
-                else if (textLower.includes('dólar') || textLower.includes('mercado') || textLower.includes('bolsa')) {
-                    appendMessage("📈 <strong>Consulta de Mercado (Simulação):</strong><br>O Dólar está cotado a R$ 5,42 (-0.45%). O Ibovespa apresenta alta de +1.20% (128.450 pts). Deseja analisar algum ativo específico?", 'ai');
+                const lower = text.toLowerCase();
+                let responseText = '';
+
+                if (lower.includes('gastei') || lower.includes('paguei') || lower.includes('despesa')) {
+                    const parsed = parseNaturalTransaction(text, 'expense');
+                    if (parsed) {
+                        state.pendingAction = parsed;
+                        state.aiChat.push({ role: 'assistant', content: `Identifiquei uma despesa. Confira os dados para confirmar:` });
+                        state.aiChat.push({ role: 'confirmation-card', data: parsed });
+                        renderTabContent();
+                        scrollToBottomChat();
+                        return;
+                    }
+                } else if (lower.includes('recebi') || lower.includes('ganhei') || lower.includes('freela') || lower.includes('salário')) {
+                    const parsed = parseNaturalTransaction(text, 'income');
+                    if (parsed) {
+                        state.pendingAction = parsed;
+                        state.aiChat.push({ role: 'assistant', content: `Identifiquei uma receita. Confira os dados para confirmar:` });
+                        state.aiChat.push({ role: 'confirmation-card', data: parsed });
+                        renderTabContent();
+                        scrollToBottomChat();
+                        return;
+                    }
+                } else if (lower.includes('guardar') || lower.includes('poupar') || lower.includes('juros')) {
+                    responseText = `📊 <strong>Simulação Madalux:</strong><br>Aporte mensal de R$ 1.000 por 24 meses acumula aproximadamente R$ 26.850 a 11,25% a.a.`;
+                } else if (lower.includes('bolsa') || lower.includes('dólar')) {
+                    responseText = `📈 <strong>Mercado:</strong> Ibovespa: 128.450 pts | Dólar: R$ 5,48 | Selic: 11,25% a.a.`;
+                } else {
+                    responseText = `Compreendi sua solicitação. Posso ajudar a registrar transações ou analisar suas contas.`;
                 }
-                else {
-                    appendMessage("Compreendi. Como este é o ambiente de configuração inicial, aguardo você conectar suas contas ou registrar entradas/saídas para podermos fazer análises mais profundas.", 'ai');
-                }
+
+                state.aiChat.push({ role: 'assistant', content: responseText });
+                renderTabContent();
+                scrollToBottomChat();
             }, 600);
         }
 
-        function sendQuickMessage(msg) {
-            chatInput.value = msg;
-            handleChatSubmit(new Event('submit'));
+        function parseNaturalTransaction(text, type) {
+            const matchVal = text.match(/(?:r\$\s*)?(\d+[\.,]?\d*)/i);
+            if (!matchVal) return null;
+            let amount = parseFloat(matchVal[1].replace(',', '.'));
+            let category = type === 'income' ? 'Renda Extra' : 'Outros';
+            let description = text.replace(/r?\$?\s*\d+[\.,]?\d*/gi, '').trim();
+            description = description ? description.charAt(0).toUpperCase() + description.slice(1) : category;
+
+            return {
+                id: 't_' + Date.now(),
+                description,
+                category,
+                amount,
+                type,
+                date: new Date().toISOString().split('T')[0],
+                accountId: state.accounts[0] ? state.accounts[0].id : '1',
+                status: type === 'income' ? 'received' : 'paid'
+            };
         }
 
-        // Função do Admin Panel
-        function aprovarUsuario(nome, rowId) {
-            alert(`✅ O acesso de ${nome} foi aprovado com sucesso! Um e-mail foi disparado.`);
-            document.getElementById(rowId).style.display = 'none';
+        function confirmTransaction() {
+            if (!state.pendingAction) return;
+            state.transactions.unshift(state.pendingAction);
+            if (state.accounts.length > 0) {
+                if (state.pendingAction.type === 'income') state.accounts[0].balance += state.pendingAction.amount;
+                else state.accounts[0].balance -= state.pendingAction.amount;
+            }
+            saveToStorage();
+            state.aiChat.push({ role: 'assistant', content: `Transação de <strong><span class="financial-value">${formatCurrency(state.pendingAction.amount)}</span></strong> salva com sucesso!` });
+            state.pendingAction = null;
+            renderTabContent();
+            scrollToBottomChat();
+            showToast('Transação registrada!');
         }
 
-        // Iniciar Gráfico Fictício (Se necessário)
-        let chartInstance = null;
-        function initChart() {
-            const ctx = document.getElementById('chart-demo');
-            if(!ctx || chartInstance) return;
-            // Apenas inicializa o contexto, mantemos o placeholder visível porque o sistema está "zerado"
-            chartInstance = true; 
+        function cancelTransaction() {
+            state.pendingAction = null;
+            state.aiChat.push({ role: 'assistant', content: 'Operação cancelada.' });
+            renderTabContent();
+            scrollToBottomChat();
         }
 
-        // Definir aba inicial
-        changeTab('dashboard');
+        function clearChat() {
+            state.aiChat = [{ role: 'assistant', content: 'Histórico reiniciado.' }];
+            renderTabContent();
+        }
 
+        // --- Market Module ---
+        function renderMarket() {
+            return `
+                <div class="space-y-6">
+                    <div class="bg-surface-light dark:bg-grafite border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm space-y-4 transition-colors">
+                        <div class="flex justify-between items-center">
+                            <div><h3 class="text-base font-bold">Cotações e Indicadores Madalux</h3><p class="text-xs text-slate-400">Dados oficiais de mercado.</p></div>
+                            <span class="px-2.5 py-1 rounded text-[10px] bg-emerald/10 text-emerald-500 font-semibold">B3 / Banco Central</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+                            <div class="p-4 bg-slate-50 dark:bg-grafite-dark rounded-xl border border-slate-200 dark:border-slate-800">
+                                <span class="text-[11px] text-slate-400">Taxa Selic</span>
+                                <h4 class="text-lg font-bold mt-1">11,25% <span class="text-xs text-emerald-500 font-normal">a.a.</span></h4>
+                            </div>
+                            <div class="p-4 bg-slate-50 dark:bg-grafite-dark rounded-xl border border-slate-200 dark:border-slate-800">
+                                <span class="text-[11px] text-slate-400">CDI Atual</span>
+                                <h4 class="text-lg font-bold mt-1">11,15% <span class="text-xs text-emerald-500 font-normal">a.a.</span></h4>
+                            </div>
+                            <div class="p-4 bg-slate-50 dark:bg-grafite-dark rounded-xl border border-slate-200 dark:border-slate-800">
+                                <span class="text-[11px] text-slate-400">Ibovespa</span>
+                                <h4 class="text-lg font-bold mt-1">128.450 <span class="text-xs text-emerald-500 font-normal">+0.65%</span></h4>
+                            </div>
+                            <div class="p-4 bg-slate-50 dark:bg-grafite-dark rounded-xl border border-slate-200 dark:border-slate-800">
+                                <span class="text-[11px] text-slate-400">Dólar Comercial</span>
+                                <h4 class="text-lg font-bold mt-1">R$ 5,48 <span class="text-xs text-red-400 font-normal">-0.28%</span></h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- Reports Module ---
+        function renderReports() {
+            const totalBalance = state.accounts.reduce((a, b) => a + b.balance, 0);
+            return `
+                <div class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="text-base font-bold">Relatório de Evolução Patrimonial</h3>
+                            <p class="text-xs text-slate-400">Análise completa do seu fluxo de caixa e evolução financeira.</p>
+                        </div>
+                        <div class="flex space-x-3">
+                            <button onclick="alert('Exportando Relatório PDF com layout Madalux...')" class="px-4 py-2 border border-gold/30 text-gold hover:bg-gold hover:text-navy rounded-xl text-xs font-bold transition flex items-center space-x-2">
+                                <i data-lucide="file-text" class="w-4 h-4"></i><span>Exportar PDF</span>
+                            </button>
+                            <button onclick="alert('Gerando planilha Microsoft Excel...')" class="px-4 py-2 border border-emerald/30 text-emerald-500 hover:bg-emerald hover:text-white rounded-xl text-xs font-bold transition flex items-center space-x-2">
+                                <i data-lucide="sheet" class="w-4 h-4"></i><span>Exportar Excel</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-surface-light dark:bg-grafite border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm transition-colors space-y-4">
+                        <p class="text-xs text-slate-400">Patrimônio Líquido atual consolidado: <strong class="text-gold financial-value">${formatCurrency(totalBalance)}</strong></p>
+                        <div class="h-80 relative"><canvas id="reportsChart"></canvas></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function initReportsCharts() {
+            const ctx = document.getElementById('reportsChart');
+            const totalBalance = state.accounts.reduce((a, b) => a + b.balance, 0);
+            if(ctx) {
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
+                        datasets: [{ label: 'Patrimônio Total', data: [0, 0, 0, 0, 0, totalBalance], borderColor: '#D4B16A', backgroundColor: '#D4B16A20', fill: true, tension: 0.3 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#33415540' } } } }
+                });
+            }
+        }
+
+        // --- Admin Approval Panel Module ---
+        function renderAdminPanel() {
+            const pendingUsers = state.users.filter(u => u.status === 'pending');
+            return `
+                <div class="space-y-6">
+                    <div class="bg-surface-light dark:bg-grafite border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm space-y-4">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h3 class="text-base font-bold text-gold">Painel de Aprovação de Cadastros</h3>
+                                <p class="text-xs text-slate-400">Gerencie novos usuários solicitando acesso à plataforma Madalux.</p>
+                            </div>
+                            <span class="px-3 py-1 rounded-lg bg-gold/10 text-gold text-xs font-semibold">${pendingUsers.length} Pendentes</span>
+                        </div>
+
+                        ${pendingUsers.length === 0 ? `
+                            <div class="p-8 text-center text-slate-400 text-xs bg-slate-50 dark:bg-grafite-dark rounded-xl">Nenhuma solicitação de cadastro pendente no momento.</div>
+                        ` : `
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-xs">
+                                    <thead>
+                                        <tr class="text-slate-400 border-b border-slate-700/50 pb-2">
+                                            <th class="pb-3">Nome Completo</th>
+                                            <th class="pb-3">E-mail</th>
+                                            <th class="pb-3">Data da Solicitação</th>
+                                            <th class="pb-3 text-right">Ações de Acesso</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-800/50">
+                                        ${pendingUsers.map(u => `
+                                            <tr class="hover:bg-slate-800/20">
+                                                <td class="py-3.5 font-bold">${u.name}</td>
+                                                <td class="py-3.5 text-slate-300">${u.email}</td>
+                                                <td class="py-3.5 text-slate-400">${new Date(u.date).toLocaleString('pt-BR')}</td>
+                                                <td class="py-3.5 text-right space-x-2">
+                                                    <button onclick="approveUser('${u.id}')" class="px-3 py-1.5 bg-emerald text-white rounded-lg font-bold hover:bg-emerald-light transition">Aprovar</button>
+                                                    <button onclick="rejectUser('${u.id}')" class="px-3 py-1.5 bg-red-500/20 text-red-400 rounded-lg font-bold hover:bg-red-500/30 transition">Recusar</button>
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        `}
+                    </div>
+
+                    <!-- Outbox / Email Simulator Center -->
+                    <div class="bg-surface-light dark:bg-grafite border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm space-y-4">
+                        <h3 class="text-sm font-bold">📬 Central de Notificações por E-mail (Outbox)</h3>
+                        <p class="text-xs text-slate-400">Simulador de e-mails de acesso:</p>
+                        
+                        <div class="space-y-3">
+                            ${state.outboxEmails.map(em => `
+                                <div class="p-4 bg-slate-50 dark:bg-grafite-dark rounded-xl border border-slate-700/50 text-xs space-y-1">
+                                    <div class="flex justify-between font-bold text-slate-300">
+                                        <span>Para: ${em.to}</span>
+                                        <span class="text-slate-400 font-normal">${em.date}</span>
+                                    </div>
+                                    <p class="text-gold font-semibold">${em.subject}</p>
+                                    <p class="text-slate-400">${em.body}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function approveUser(userId) {
+            const u = state.users.find(x => x.id === userId);
+            if (u) {
+                u.status = 'approved';
+                state.outboxEmails.push({
+                    id: 'email_' + Date.now(),
+                    to: u.email,
+                    subject: 'Seu acesso à Madalux foi liberado!',
+                    body: `Olá ${u.name}, sua solicitação de acesso foi aprovada pelo administrador. Você já pode fazer login na plataforma.`,
+                    date: new Date().toLocaleString('pt-BR'),
+                    status: 'sent'
+                });
+                saveToStorage();
+                renderTabContent();
+                showToast(`Aprovado com sucesso! E-mail de notificação enviado.`);
+            }
+        }
+
+        function rejectUser(userId) {
+            const u = state.users.find(x => x.id === userId);
+            if (u) {
+                u.status = 'rejected';
+                saveToStorage();
+                renderTabContent();
+                showToast(`Acesso recusado.`);
+            }
+        }
+
+        // --- Settings Module ---
+        function renderSettings() {
+            return `
+                <div class="max-w-2xl bg-surface-light dark:bg-grafite border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm space-y-6 transition-colors">
+                    <h3 class="text-base font-bold">Configurações & Perfil Madalux</h3>
+                    <div class="p-4 bg-slate-50 dark:bg-grafite-dark rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
+                        <h4 class="font-bold text-xs">Usuário Conectado</h4>
+                        <p class="text-xs text-slate-300">Nome: <strong>${state.currentUser.name}</strong></p>
+                        <p class="text-xs text-slate-300">E-mail: <strong>${state.currentUser.email}</strong></p>
+                        <p class="text-xs text-slate-300">Perfil: <strong class="uppercase text-gold">${state.currentUser.role}</strong></p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function openModal(type, id = null) {
+            const modal = document.getElementById('global-modal');
+            const content = document.getElementById('modal-content');
+            modal.classList.remove('hidden');
+
+            if (type === 'account') {
+                const acc = id ? state.accounts.find(a => a.id === id) : null;
+                content.innerHTML = `
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-base font-bold">${acc ? 'Editar Conta Bancária' : 'Nova Conta Bancária'}</h3>
+                        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-100"><i data-lucide="x" class="w-5 h-5"></i></button>
+                    </div>
+                    <form onsubmit="handleAccountSubmit(event, '${id || ''}')" class="space-y-4 text-xs">
+                        <div>
+                            <label class="block font-medium mb-1 text-slate-400">Nome da Conta</label>
+                            <input type="text" id="acc-name" required value="${acc ? acc.name : ''}" placeholder="Ex: Conta Corrente Principal, XP Investimentos" class="w-full p-2.5 bg-slate-100 dark:bg-grafite-dark border border-slate-700 rounded-xl">
+                        </div>
+                        <div>
+                            <label class="block font-medium mb-1 text-slate-400">Instituição Financeira</label>
+                            <input type="text" id="acc-inst" required value="${acc ? acc.institution : ''}" placeholder="Ex: Itaú, Nubank, XP, BTG" class="w-full p-2.5 bg-slate-100 dark:bg-grafite-dark border border-slate-700 rounded-xl">
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block font-medium mb-1 text-slate-400">Tipo de Conta</label>
+                                <select id="acc-type" class="w-full p-2.5 bg-slate-100 dark:bg-grafite-dark border border-slate-700 rounded-xl">
+                                    <option value="corrente">Conta Corrente</option>
+                                    <option value="investimento">Investimento</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-medium mb-1 text-slate-400">Saldo Inicial (R$)</label>
+                                <input type="number" step="0.01" id="acc-balance" required value="${acc ? acc.balance : ''}" placeholder="0.00" class="w-full p-2.5 bg-slate-100 dark:bg-grafite-dark border border-slate-700 rounded-xl">
+                            </div>
+                        </div>
+                        <div class="pt-4 flex justify-end space-x-3">
+                            <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-xl border border-slate-700 text-slate-300">Cancelar</button>
+                            <button type="submit" class="px-5 py-2 bg-emerald text-white font-bold rounded-xl hover:bg-emerald-light">Salvar Conta</button>
+                        </div>
+                    </form>
+                `;
+            } else if (type === 'transaction') {
+                content.innerHTML = `
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-base font-bold">Nova Transação Madalux</h3>
+                        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-100"><i data-lucide="x" class="w-5 h-5"></i></button>
+                    </div>
+                    <form onsubmit="handleTransactionSubmit(event)" class="space-y-4 text-xs">
+                        <div>
+                            <label class="block font-medium mb-1 text-slate-400">Tipo</label>
+                            <select id="tx-type" class="w-full p-2.5 bg-slate-100 dark:bg-grafite-dark border border-slate-700 rounded-xl">
+                                <option value="expense">Despesa</option>
+                                <option value="income">Receita</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-medium mb-1 text-slate-400">Descrição</label>
+                            <input type="text" id="tx-desc" required placeholder="Ex: Salário, Supermercado" class="w-full p-2.5 bg-slate-100 dark:bg-grafite-dark border border-slate-700 rounded-xl">
+                        </div>
+                        <div>
+                            <label class="block font-medium mb-1 text-slate-400">Valor (R$)</label>
+                            <input type="number" step="0.01" id="tx-amount" required placeholder="0.00" class="w-full p-2.5 bg-slate-100 dark:bg-grafite-dark border border-slate-700 rounded-xl">
+                        </div>
+                        <div>
+                            <label class="block font-medium mb-1 text-slate-400">Categoria</label>
+                            <input type="text" id="tx-cat" required placeholder="Ex: Alimentação, Moradia" class="w-full p-2.5 bg-slate-100 dark:bg-grafite-dark border border-slate-700 rounded-xl">
+                        </div>
+                        <div class="pt-4 flex justify-end space-x-3">
+                            <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-xl border border-slate-700 text-slate-300">Cancelar</button>
+                            <button type="submit" class="px-5 py-2 bg-emerald text-white font-bold rounded-xl hover:bg-emerald-light">Salvar</button>
+                        </div>
+                    </form>
+                `;
+            }
+            lucide.createIcons();
+        }
+
+        function closeModal() {
+            document.getElementById('global-modal').classList.add('hidden');
+        }
+
+        function handleAccountSubmit(e, accountId) {
+            e.preventDefault();
+            const name = document.getElementById('acc-name').value;
+            const institution = document.getElementById('acc-inst').value;
+            const type = document.getElementById('acc-type').value;
+            const balance = parseFloat(document.getElementById('acc-balance').value);
+
+            if (accountId) {
+                const acc = state.accounts.find(a => a.id === accountId);
+                if (acc) {
+                    acc.name = name;
+                    acc.institution = institution;
+                    acc.type = type;
+                    acc.balance = balance;
+                }
+                showToast('Conta atualizada com sucesso!');
+            } else {
+                state.accounts.push({
+                    id: 'acc_' + Date.now(),
+                    name,
+                    institution,
+                    type,
+                    balance,
+                    date: new Date().toISOString().split('T')[0]
+                });
+                showToast('Conta cadastrada com sucesso!');
+            }
+
+            saveToStorage();
+            closeModal();
+            renderTabContent();
+        }
+
+        function deleteAccount(accountId) {
+            if (confirm('Deseja realmente excluir esta conta?')) {
+                state.accounts = state.accounts.filter(a => a.id !== accountId);
+                saveToStorage();
+                renderTabContent();
+                showToast('Conta excluída.');
+            }
+        }
+
+        function handleTransactionSubmit(e) {
+            e.preventDefault();
+            const type = document.getElementById('tx-type').value;
+            const description = document.getElementById('tx-desc').value;
+            const amount = parseFloat(document.getElementById('tx-amount').value);
+            const category = document.getElementById('tx-cat').value;
+
+            state.transactions.unshift({
+                id: 't_' + Date.now(),
+                description,
+                category,
+                amount,
+                type,
+                date: new Date().toISOString().split('T')[0],
+                status: type === 'income' ? 'received' : 'paid'
+            });
+
+            saveToStorage();
+            closeModal();
+            renderTabContent();
+            showToast('Transação registrada!');
+        }
     </script>
 </body>
 </html>
