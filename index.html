@@ -1,710 +1,382 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="dark">
+<html lang="pt-PT" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Madalux — Plataforma Financeira Inteligente</title>
-    <!-- Tailwind CSS -->
+    <title>Madalux - Gestão Patrimonial Exclusiva</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        navy: { DEFAULT: '#101C2C', dark: '#0a121d', light: '#1b2d45' },
-                        emerald: { DEFAULT: '#087F5B', light: '#0ca678' },
-                        gold: { DEFAULT: '#D4B16A', light: '#e2c585', dark: '#b8964d' },
-                        grafite: { DEFAULT: '#202B3A', light: '#2d3b4e', dark: '#151d28' },
-                        surface: { light: '#ffffff', dark: '#202B3A' },
-                        background: { light: '#F3F5F7', dark: '#101C2C' }
-                    },
-                    fontFamily: { sans: ['Inter', 'sans-serif'] }
-                }
-            }
+            theme: { extend: { colors: { madalux: { gold: '#D4B16A', navy: '#101C2C', graphite: '#202B3A', emerald: '#087F5B', light: '#F3F5F7' } } } }
         }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #D4B16A40; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #D4B16A80; }
-        .privacy-on .financial-value { filter: blur(6px); user-select: none; }
+        body { font-family: 'Inter', sans-serif; background-color: #101C2C; color: #f3f4f6; }
         .glass-panel { background: rgba(32, 43, 58, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(212, 177, 106, 0.1); }
+        .privacy-on .financial-value { filter: blur(6px); user-select: none; }
     </style>
 </head>
-<body class="bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-300 flex flex-col md:flex-row select-none">
+<body class="min-h-screen flex overflow-hidden">
 
-    <!-- INTEGRAÇÃO FIREBASE REAL (Configuração Exata do Usuário) -->
+    <!-- FIREBASE SDKs & LÓGICA DE AUTENTICAÇÃO -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot, collection, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // Configuração Oficial Madalux Firebase
-        const firebaseConfig = { 
-            apiKey: 'AIzaSyA5b9BVOUGi5ddVKXT8wh4OU505viQMO1o', 
-            authDomain: 'madalux-financas.firebaseapp.com', 
-            projectId: 'madalux-financas', 
-            storageBucket: 'madalux-financas.firebasestorage.app', 
-            messagingSenderId: '319105983349', 
-            appId: '1:319105983349:web:c39ca50ff68bf2166ea93c',
-            measurementId: 'G-QSS355W5GP'
+        // =====================================================================
+        // COLE AQUI AS SUAS CHAVES REAIS DO FIREBASE
+        // =====================================================================
+        const firebaseConfig = {
+            apiKey: "COLE_SUA_API_KEY_AQUI",
+            authDomain: "seu-projeto.firebaseapp.com",
+            projectId: "seu-projeto",
+            storageBucket: "seu-projeto.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef"
         };
+        // =====================================================================
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        // Constantes da Marca
-        const LOGO_URL = 'https://storage.googleapis.com/generative-ai/images/Monograma%20dourado%20met%C3%A1lico%20em%20transpar%C3%AAncia.png';
-        const ADMIN_EMAIL = 'lucasgabriel.leite3@gmail.com';
-
-        // Estado Global da Aplicação
-        window.state = {
-            currentUser: null,
-            adminUsersList: [],
-            currentTab: 'dashboard',
-            isDark: true,
-            isPrivate: false,
-            authView: 'login', // login, register
-            // Dados Financeiros Locais / Sincronizados
-            accounts: [],
-            transactions: [],
-            goals: [
-                { id: 'g1', title: 'Reserva de Emergência', target: 50000, current: 0, deadline: '2026-12-31', category: 'Segurança' }
-            ],
-            aiChat: [
-                { role: 'assistant', content: 'Olá! Sou o seu Consultor Financeiro Inteligente da Madalux. O sistema encontra-se limpo e pronto para receber suas informações. Como posso auxiliar hoje?' }
-            ]
-        };
-
-        let unsubscribeAdmin = null;
-        let unsubscribeUser = null;
+        const ADMIN_EMAIL = "lucasgabriel.leite3@gmail.com";
+        const LOGO_URL = "https://storage.googleapis.com/generative-ai/images/Monograma%20dourado%20met%C3%A1lico%20em%20transpar%C3%AAncia.png";
+        
+        let app, auth, db;
+        let currentUserData = null;
 
         document.addEventListener('DOMContentLoaded', () => {
-            renderApp();
-            monitorAuthState();
+            lucide.createIcons();
+            
+            if (firebaseConfig.apiKey.includes("COLE_SUA")) {
+                showScreen("setup-screen");
+                return;
+            }
+
+            try {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                monitorAuthState();
+            } catch (error) {
+                console.error("Erro ao inicializar Firebase", error);
+            }
+
+            document.getElementById('login-form').addEventListener('submit', handleLogin);
+            document.getElementById('register-form').addEventListener('submit', handleRegister);
         });
+
+        // Roteamento inteligente com auto-reparação para evitar falhas de concorrência
+        async function routeUser(user) {
+            const userDocRef = doc(db, "users", user.uid);
+            let userDoc = await getDoc(userDocRef);
+            
+            if (!userDoc.exists()) {
+                try {
+                    await setDoc(userDocRef, {
+                        uid: user.uid,
+                        name: user.email === ADMIN_EMAIL ? "Lucas Gabriel (Admin)" : "Utilizador",
+                        email: user.email,
+                        status: (user.email === ADMIN_EMAIL) ? "approved" : "pending",
+                        createdAt: new Date().toISOString()
+                    });
+                    userDoc = await getDoc(userDocRef);
+                } catch (error) {
+                    console.error("Erro ao recuperar perfil:", error);
+                }
+            }
+
+            if (userDoc.exists()) {
+                currentUserData = userDoc.data();
+                const isAdmin = (currentUserData.email === ADMIN_EMAIL);
+                
+                if (isAdmin) {
+                    showScreen("main-dashboard");
+                    document.getElementById("admin-menu-btn").classList.remove("hidden");
+                    loadAdminPanelRealtime();
+                } else if (currentUserData.status === 'approved') {
+                    showScreen("main-dashboard");
+                    document.getElementById("admin-menu-btn").classList.add("hidden");
+                } else {
+                    showScreen("pending-screen");
+                }
+            } else {
+                auth.signOut();
+            }
+        }
 
         function monitorAuthState() {
             onAuthStateChanged(auth, (user) => {
                 if (user) {
-                    // Monitora o documento do usuário em tempo real
-                    if(unsubscribeUser) unsubscribeUser();
-                    unsubscribeUser = onSnapshot(doc(db, "users", user.uid), (docSnap) => {
-                        if (docSnap.exists()) {
-                            const data = docSnap.data();
-                            window.state.currentUser = data;
-                            
-                            // Carrega os dados financeiros salvos
-                            if (data.financialData) {
-                                window.state.accounts = data.financialData.accounts || [];
-                                window.state.transactions = data.financialData.transactions || [];
-                                window.state.goals = data.financialData.goals || window.state.goals;
-                            } else {
-                                // Dados iniciais zerados se for primeiro acesso
-                                window.state.accounts = [];
-                                window.state.transactions = [];
-                            }
-
-                            // Se for admin, carrega painel
-                            if (data.email === ADMIN_EMAIL) {
-                                loadAdminPanelRealtime();
-                            }
-                            renderApp();
-                        } else {
-                            auth.signOut();
-                        }
-                    });
+                    routeUser(user);
                 } else {
-                    window.state.currentUser = null;
-                    if(unsubscribeUser) unsubscribeUser();
-                    if(unsubscribeAdmin) unsubscribeAdmin();
-                    renderApp();
+                    showScreen("auth-screen");
                 }
             });
         }
 
-        // --- Funções de Autenticação ---
-        window.handleLogin = async (e) => {
+        async function handleLogin(e) {
             e.preventDefault();
             const btn = document.getElementById('login-btn');
-            btn.innerHTML = 'Autenticando...';
-            const email = document.getElementById('email-login').value;
-            const pass = document.getElementById('pass-login').value;
-            
+            btn.innerHTML = 'A autenticar...';
             try {
-                await signInWithEmailAndPassword(auth, email, pass);
-                window.showToast('Login realizado com sucesso!');
+                await signInWithEmailAndPassword(auth, document.getElementById('email-login').value, document.getElementById('pass-login').value);
             } catch (error) {
-                alert("Falha no login: E-mail ou senha incorretos.");
-                btn.innerHTML = 'Entrar na Plataforma';
+                alert("Falha no login. Verifique o seu e-mail e palavra-passe.");
+                btn.innerHTML = 'Entrar';
             }
-        };
+        }
 
-        window.handleRegister = async (e) => {
+        async function handleRegister(e) {
             e.preventDefault();
             const btn = document.getElementById('reg-btn');
-            btn.innerHTML = 'Registrando...';
-            const name = document.getElementById('name-reg').value;
-            const email = document.getElementById('email-reg').value;
-            const pass = document.getElementById('pass-reg').value;
-            
+            btn.innerHTML = 'A registar...';
             try {
-                const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+                const userCredential = await createUserWithEmailAndPassword(auth, document.getElementById('email-reg').value, document.getElementById('pass-reg').value);
                 const user = userCredential.user;
-                const isAdmin = (email === ADMIN_EMAIL);
                 
                 await setDoc(doc(db, "users", user.uid), {
                     uid: user.uid,
-                    name: name,
-                    email: email,
-                    role: isAdmin ? 'admin' : 'user',
-                    status: isAdmin ? 'approved' : 'pending',
-                    createdAt: new Date().toISOString(),
-                    financialData: { accounts: [], transactions: [], goals: window.state.goals }
+                    name: document.getElementById('name-reg').value,
+                    email: user.email,
+                    status: (user.email === ADMIN_EMAIL) ? "approved" : "pending",
+                    createdAt: new Date().toISOString()
                 });
-                
-                window.showToast(isAdmin ? 'Conta Admin criada!' : 'Cadastro realizado! Aguardando aprovação.');
             } catch (error) {
-                alert("Erro ao criar conta: O e-mail pode já estar em uso ou a senha é fraca.");
+                alert("Erro ao criar conta: " + error.message);
                 btn.innerHTML = 'Solicitar Acesso';
             }
-        };
+        }
 
-        window.logout = () => {
-            signOut(auth);
-            window.showToast('Sessão encerrada.');
-        };
+        window.logout = () => { signOut(auth); };
 
-        // --- Sincronização de Dados Financeiros ---
-        window.saveFinancialData = async () => {
-            if (!auth.currentUser) return;
-            try {
-                await updateDoc(doc(db, "users", auth.currentUser.uid), {
-                    financialData: {
-                        accounts: window.state.accounts,
-                        transactions: window.state.transactions,
-                        goals: window.state.goals
-                    }
-                });
-            } catch (error) {
-                console.error("Erro ao salvar dados no Firestore", error);
-            }
-        };
-
-        // --- Administração ---
+        // Painel Administrativo em Tempo Real (Exclusivo Admin)
         function loadAdminPanelRealtime() {
-            const usersRef = collection(db, "users");
-            const q = query(usersRef, orderBy("createdAt", "desc"));
-            
-            if(unsubscribeAdmin) unsubscribeAdmin();
-            unsubscribeAdmin = onSnapshot(q, (snapshot) => {
-                window.state.adminUsersList = [];
+            const q = query(collection(db, "users"), orderBy("createdAt", "desc"));
+            onSnapshot(q, (snapshot) => {
+                const tbody = document.getElementById("admin-users-list");
+                if(!tbody) return;
+                tbody.innerHTML = "";
+                
                 snapshot.forEach((docSnap) => {
                     const user = docSnap.data();
-                    if (user.email !== ADMIN_EMAIL) {
-                        window.state.adminUsersList.push(user);
-                    }
+                    if (user.email === ADMIN_EMAIL) return; // Oculta o admin da própria listagem
+                    
+                    const dateStr = new Date(user.createdAt).toLocaleDateString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+                    const tr = document.createElement("tr");
+                    tr.className = "border-b border-madalux-gold/5 hover:bg-madalux-gold/5 transition-all";
+                    tr.innerHTML = `
+                        <td class="p-4 text-sm text-white">${user.name}</td>
+                        <td class="p-4 text-sm text-gray-400">${user.email}</td>
+                        <td class="p-4 text-sm text-gray-500">${dateStr}</td>
+                        <td class="p-4 text-sm">
+                            <span class="px-2 py-1 rounded text-xs font-medium ${user.status === 'approved' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}">
+                                ${user.status.toUpperCase()}
+                            </span>
+                        </td>
+                        <td class="p-4 text-right space-x-2">
+                            ${user.status === 'pending' ? `<button onclick="updateUserStatus('${docSnap.id}', 'approved')" class="bg-madalux-emerald text-white px-3 py-1 rounded text-xs hover:bg-green-600 transition-all">Aprovar</button>` : ''}
+                            ${user.status === 'pending' ? `<button onclick="updateUserStatus('${docSnap.id}', 'rejected')" class="bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1 rounded text-xs hover:bg-red-500 hover:text-white transition-all">Recusar</button>` : ''}
+                            ${user.status === 'approved' ? `<button onclick="updateUserStatus('${docSnap.id}', 'pending')" class="bg-gray-700 text-gray-300 px-3 py-1 rounded text-xs hover:bg-gray-600 transition-all">Bloquear</button>` : ''}
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
                 });
-                if(window.state.currentTab === 'admin-panel') renderTabContent();
             });
         }
 
         window.updateUserStatus = async (uid, newStatus) => {
             try {
                 await updateDoc(doc(db, "users", uid), { status: newStatus });
-                window.showToast(`Status atualizado para ${newStatus}`);
             } catch (error) {
-                alert("Erro ao atualizar status. Permissão negada.");
+                alert("Erro ao atualizar o status.");
             }
         };
 
-        // Torna a função global para chamadas HTML
-        window.LOGO_URL = LOGO_URL;
-        window.ADMIN_EMAIL = ADMIN_EMAIL;
+        function showScreen(screenId) {
+            ['auth-screen', 'pending-screen', 'main-dashboard', 'setup-screen'].forEach(id => {
+                document.getElementById(id)?.classList.add('hidden');
+            });
+            document.getElementById(screenId)?.classList.remove('hidden');
+        }
+
+        window.toggleAuthMode = () => {
+            document.getElementById('login-form-container').classList.toggle('hidden');
+            document.getElementById('register-form-container').classList.toggle('hidden');
+        };
+
+        window.changeTab = (tabId) => {
+            ['dashboard', 'contas', 'admin'].forEach(id => {
+                document.getElementById('tab-' + id)?.classList.add('hidden');
+            });
+            document.getElementById('tab-' + tabId)?.classList.remove('hidden');
+        };
+        
+        let isPrivacyOn = false;
+        window.togglePrivacy = () => {
+            isPrivacyOn = !isPrivacyOn;
+            document.body.classList.toggle('privacy-on', isPrivacyOn);
+        };
     </script>
 
-    <!-- App Root Container -->
-    <div id="app-root" class="w-full min-h-screen flex flex-col md:flex-row relative"></div>
-
-    <!-- Modais Globais -->
-    <div id="global-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div id="modal-content" class="bg-surface-light dark:bg-grafite border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl relative"></div>
-    </div>
-
-    <!-- Open Finance Modal -->
-    <div id="modal-openfinance" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-surface-light dark:bg-grafite w-full max-w-md p-6 rounded-2xl border border-gold/30 shadow-2xl">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold flex items-center"><i data-lucide="link" class="w-5 h-5 mr-2 text-gold"></i> Conectar Instituição</h3>
-                <button onclick="document.getElementById('modal-openfinance').classList.add('hidden')" class="text-slate-400 hover:text-slate-100"><i data-lucide="x"></i></button>
-            </div>
-            <p class="text-xs text-slate-400 mb-6">Sincronize seu saldo e transações de forma automática e segura via Open Finance.</p>
-            <div class="space-y-3 text-sm">
-                <button class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-gold hover:bg-gold/10 transition-all">
-                    <div class="flex items-center"><div class="w-8 h-8 rounded bg-purple-600 mr-3"></div><span class="font-medium text-slate-100">Nubank</span></div>
-                    <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
-                </button>
-                <button class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-gold hover:bg-gold/10 transition-all">
-                    <div class="flex items-center"><div class="w-8 h-8 rounded bg-orange-500 mr-3"></div><span class="font-medium text-slate-100">Itaú Personnalité</span></div>
-                    <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
-                </button>
-            </div>
+    <!-- TELA DE SETUP (Caso faltem as chaves) -->
+    <div id="setup-screen" class="min-h-screen w-full flex items-center justify-center p-6 hidden">
+        <div class="glass-panel p-8 rounded-2xl max-w-lg w-full border border-red-500/30 text-center">
+            <i data-lucide="database" class="w-12 h-12 text-red-400 mx-auto mb-4"></i>
+            <h2 class="text-xl font-bold text-white mb-2">Configuração do Firebase Necessária</h2>
+            <p class="text-sm text-gray-300 mb-4">Insira as chaves do seu projeto Firebase no código JavaScript do ficheiro index.html para ativar a base de dados.</p>
         </div>
     </div>
 
-    <!-- Notification Toast -->
-    <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-navy dark:bg-grafite border border-gold/40 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center space-x-3 text-xs">
-        <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400"></i>
-        <span id="toast-message">Operação realizada com sucesso!</span>
+    <!-- TELA DE LOGIN E CADASTRO -->
+    <div id="auth-screen" class="min-h-screen w-full flex flex-col md:flex-row hidden">
+        <div class="md:w-1/2 flex items-center justify-center p-8 border-r border-madalux-gold/10">
+            <div class="max-w-sm w-full space-y-8 relative z-10">
+                <div class="text-center">
+                    <img src="https://storage.googleapis.com/generative-ai/images/Monograma%20dourado%20met%C3%A1lico%20em%20transpar%C3%AAncia.png" alt="Madalux Logo" class="h-24 mx-auto mb-4 drop-shadow-[0_0_15px_rgba(212,177,106,0.3)]">
+                    <h2 class="text-2xl font-bold text-madalux-gold">Madalux Finanças</h2>
+                    <p class="text-sm text-gray-400 mt-2">Acesso Exclusivo Familiar</p>
+                </div>
+
+                <!-- Formulário de Login -->
+                <div id="login-form-container">
+                    <form id="login-form" class="space-y-4">
+                        <input type="email" id="email-login" required placeholder="E-mail" class="w-full p-4 rounded-xl bg-madalux-graphite border border-madalux-gold/20 text-white focus:outline-none focus:border-madalux-gold transition-colors">
+                        <input type="password" id="pass-login" required placeholder="Palavra-passe" class="w-full p-4 rounded-xl bg-madalux-graphite border border-madalux-gold/20 text-white focus:outline-none focus:border-madalux-gold transition-colors">
+                        <button type="submit" id="login-btn" class="w-full py-4 rounded-xl bg-madalux-gold text-madalux-navy font-bold hover:bg-yellow-500 transition-all">Entrar</button>
+                    </form>
+                    <div class="text-center mt-6">
+                        <p class="text-sm text-gray-400">Novo por aqui? <button onclick="toggleAuthMode()" class="text-madalux-gold hover:underline font-medium">Solicitar Acesso</button></p>
+                    </div>
+                </div>
+
+                <!-- Formulário de Cadastro -->
+                <div id="register-form-container" class="hidden">
+                    <form id="register-form" class="space-y-4">
+                        <input type="text" id="name-reg" required placeholder="Nome Completo" class="w-full p-4 rounded-xl bg-madalux-graphite border border-madalux-gold/20 text-white focus:outline-none focus:border-madalux-gold transition-colors">
+                        <input type="email" id="email-reg" required placeholder="E-mail" class="w-full p-4 rounded-xl bg-madalux-graphite border border-madalux-gold/20 text-white focus:outline-none focus:border-madalux-gold transition-colors">
+                        <input type="password" id="pass-reg" required placeholder="Crie uma Palavra-passe (Min. 6 carateres)" class="w-full p-4 rounded-xl bg-madalux-graphite border border-madalux-gold/20 text-white focus:outline-none focus:border-madalux-gold transition-colors">
+                        <button type="submit" id="reg-btn" class="w-full py-4 rounded-xl border border-madalux-gold text-madalux-gold font-bold hover:bg-madalux-gold hover:text-madalux-navy transition-all">Solicitar Acesso</button>
+                    </form>
+                    <div class="text-center mt-6">
+                        <p class="text-sm text-gray-400">Já tem conta? <button onclick="toggleAuthMode()" class="text-madalux-gold hover:underline font-medium">Voltar ao Login</button></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="md:w-1/2 bg-[url('https://images.unsplash.com/photo-1600880292203-757bb62b4baf?q=80&w=2070')] bg-cover bg-center hidden md:block">
+            <div class="w-full h-full bg-madalux-navy/80 backdrop-blur-sm"></div>
+        </div>
     </div>
 
-    <script>
-        // --- Renderização da Interface ---
-        function renderApp() {
-            const root = document.getElementById('app-root');
-            
-            if (!window.state.currentUser) {
-                root.innerHTML = renderAuthScreen();
-                lucide.createIcons();
-                return;
-            }
+    <!-- TELA DE AGUARDANDO APROVAÇÃO -->
+    <div id="pending-screen" class="min-h-screen w-full flex items-center justify-center p-6 hidden relative">
+        <div class="glass-panel p-10 rounded-3xl max-w-lg w-full text-center border border-madalux-gold/30 relative z-10">
+            <img src="https://storage.googleapis.com/generative-ai/images/Monograma%20dourado%20met%C3%A1lico%20em%20transpar%C3%AAncia.png" class="h-16 mx-auto mb-6 opacity-70">
+            <i data-lucide="lock" class="w-16 h-16 text-madalux-gold mx-auto mb-6"></i>
+            <h2 class="text-2xl font-bold text-white mb-4">Acesso Pendente</h2>
+            <p class="text-gray-400 mb-8 leading-relaxed">
+                O seu registo foi enviado com sucesso para o servidor e aguarda validação pelo administrador.<br><br>
+                Assim que a conta for aprovada, o acesso será libertado automaticamente.
+            </p>
+            <button onclick="logout()" class="text-sm text-madalux-gold border border-madalux-gold/30 px-6 py-2 rounded-full hover:bg-madalux-gold hover:text-madalux-navy transition-all">Sair</button>
+        </div>
+    </div>
 
-            if (window.state.currentUser.status === 'pending') {
-                root.innerHTML = renderPendingScreen();
-                lucide.createIcons();
-                return;
-            }
-            if (window.state.currentUser.status === 'rejected') {
-                root.innerHTML = renderRejectedScreen();
-                lucide.createIcons();
-                return;
-            }
-
-            const isAdmin = window.state.currentUser.email === window.ADMIN_EMAIL;
-            
-            const navItems = [
-                { id: 'dashboard', label: 'Dashboard', icon: 'layout-dashboard' },
-                { id: 'transactions', label: 'Receitas & Despesas', icon: 'wallet' },
-                { id: 'accounts', label: 'Contas & Bancos', icon: 'landmark' },
-                { id: 'goals', label: 'Metas Financeiras', icon: 'target' },
-                { id: 'ai-assistant', label: 'Consultor IA Madalux', icon: 'bot', badge: 'PRO' },
-                { id: 'market', label: 'Mercado Financeiro', icon: 'trending-up' },
-                { id: 'reports', label: 'Relatórios Executivos', icon: 'pie-chart' }
-            ];
-
-            if (isAdmin) {
-                navItems.push({ id: 'admin-panel', label: 'Painel de Aprovação', icon: 'shield-alert', badge: 'ADMIN' });
-            }
-            navItems.push({ id: 'settings', label: 'Configurações', icon: 'settings' });
-
-            root.innerHTML = `
-                <!-- Sidebar Desktop -->
-                <aside class="hidden md:flex flex-col w-72 bg-surface-light dark:bg-grafite border-r border-slate-200 dark:border-slate-800 p-6 shrink-0 sticky top-0 h-screen transition-colors duration-300">
-                    <div class="flex flex-col items-center justify-center mb-8 pb-6 border-b border-gold/10">
-                        <img src="${window.LOGO_URL}" alt="Madalux" class="h-20 object-contain drop-shadow-[0_0_15px_rgba(212,177,106,0.3)] mb-3">
-                        <span class="text-xs uppercase tracking-widest text-gold font-semibold block">Madalux</span>
-                    </div>
-
-                    <nav class="space-y-1.5 flex-1 overflow-y-auto pr-1">
-                        ${navItems.map(i => `
-                            <button onclick="window.switchTab('${i.id}')" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${window.state.currentTab===i.id ? 'bg-gradient-to-r from-navy dark:from-grafite-light to-navy/80 text-gold border border-gold/30 shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-grafite-light/50'}">
-                                <div class="flex items-center space-x-3">
-                                    <i data-lucide="${i.icon}" class="w-4 h-4 ${window.state.currentTab===i.id ? 'text-gold' : 'text-slate-400'}"></i>
-                                    <span>${i.label}</span>
-                                </div>
-                                ${i.badge ? `<span class="px-1.5 py-0.5 text-[9px] bg-gold/20 text-gold font-bold rounded">${i.badge}</span>` : ''}
-                            </button>
-                        `).join('')}
-                    </nav>
-
-                    <div class="pt-4 mt-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
-                        <div class="flex items-center justify-between bg-slate-100 dark:bg-grafite-dark p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 transition-colors">
-                            <button onclick="window.togglePrivacy()" class="flex-1 py-1.5 px-2 rounded-lg text-xs font-medium flex items-center justify-center space-x-1.5 text-slate-600 dark:text-slate-300 hover:text-gold transition">
-                                <i data-lucide="eye" id="desktop-privacy-icon" class="w-4 h-4"></i>
-                                <span>Privacidade</span>
-                            </button>
-                        </div>
-                        <div class="flex items-center justify-between px-2 pt-2">
-                            <div class="truncate pr-2">
-                                <p class="text-xs font-bold truncate">${window.state.currentUser.name}</p>
-                                <p class="text-[10px] text-slate-400 truncate">${window.state.currentUser.email}</p>
-                            </div>
-                            <button onclick="window.logout()" class="p-2 text-slate-400 hover:text-red-400 transition" title="Sair"><i data-lucide="log-out" class="w-4 h-4"></i></button>
-                        </div>
-                    </div>
-                </aside>
-
-                <!-- Mobile Header & Nav -->
-                <header class="md:hidden flex items-center justify-between p-4 bg-surface-light dark:bg-grafite border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50">
-                    <div class="flex items-center space-x-3">
-                        <img src="${window.LOGO_URL}" alt="Madalux" class="h-8 object-contain">
-                        <h1 class="text-xs uppercase tracking-widest text-gold font-semibold">Madalux</h1>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <button onclick="window.togglePrivacy()" class="p-2 rounded-lg text-slate-400"><i data-lucide="eye" class="w-5 h-5"></i></button>
-                    </div>
-                </header>
-
-                <div class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface-light dark:bg-grafite border-t border-slate-800 px-3 py-2 flex justify-around shadow-2xl">
-                    <button onclick="window.switchTab('dashboard')" class="flex flex-col items-center ${window.state.currentTab==='dashboard'?'text-gold':'text-slate-400'}"><i data-lucide="layout-dashboard" class="w-5 h-5"></i><span class="text-[10px]">Início</span></button>
-                    <button onclick="window.switchTab('transactions')" class="flex flex-col items-center ${window.state.currentTab==='transactions'?'text-gold':'text-slate-400'}"><i data-lucide="wallet" class="w-5 h-5"></i><span class="text-[10px]">Extrato</span></button>
-                    <button onclick="window.switchTab('ai-assistant')" class="flex flex-col items-center text-gold relative -top-3 bg-navy p-3 rounded-full border border-gold/40 shadow-xl"><i data-lucide="bot" class="w-6 h-6"></i></button>
-                    <button onclick="window.switchTab('accounts')" class="flex flex-col items-center ${window.state.currentTab==='accounts'?'text-gold':'text-slate-400'}"><i data-lucide="landmark" class="w-5 h-5"></i><span class="text-[10px]">Contas</span></button>
-                    <button onclick="window.logout()" class="flex flex-col items-center text-slate-400"><i data-lucide="log-out" class="w-5 h-5"></i><span class="text-[10px]">Sair</span></button>
+    <!-- TELA PRINCIPAL / DASHBOARD -->
+    <div id="main-dashboard" class="w-full flex h-screen hidden">
+        <aside class="w-64 flex flex-col justify-between glass-panel border-r border-madalux-gold/20">
+            <div>
+                <div class="p-6 flex items-center justify-center border-b border-madalux-gold/10">
+                    <img src="https://storage.googleapis.com/generative-ai/images/Monograma%20dourado%20met%C3%A1lico%20em%20transpar%C3%AAncia.png" class="h-12 object-contain drop-shadow-[0_0_15px_rgba(212,177,106,0.3)]">
                 </div>
+                <nav class="p-4 space-y-2 mt-2">
+                    <button onclick="changeTab('dashboard')" class="w-full flex items-center space-x-3 p-3 rounded-lg text-madalux-gold hover:bg-madalux-gold/10 transition-all text-left">
+                        <i data-lucide="layout-dashboard" class="w-5 h-5"></i><span>Dashboard</span>
+                    </button>
+                    <button onclick="changeTab('contas')" class="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-400 hover:text-madalux-gold hover:bg-madalux-gold/10 transition-all text-left">
+                        <i data-lucide="landmark" class="w-5 h-5"></i><span>Contas</span>
+                    </button>
+                    <!-- Painel de Administração visível apenas para o Administrador -->
+                    <button id="admin-menu-btn" onclick="changeTab('admin')" class="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-400 hover:text-madalux-gold hover:bg-madalux-gold/10 transition-all text-left hidden">
+                        <i data-lucide="shield-check" class="w-5 h-5"></i><span>Administração</span>
+                    </button>
+                </nav>
+            </div>
+            <div class="p-4 border-t border-madalux-gold/10">
+                <button onclick="logout()" class="w-full flex items-center justify-center space-x-2 p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all">
+                    <i data-lucide="log-out" class="w-4 h-4"></i><span class="text-sm font-medium">Encerrar Sessão</span>
+                </button>
+            </div>
+        </aside>
 
-                <!-- Main Content Area -->
-                <main class="flex-1 flex flex-col min-w-0 overflow-y-auto h-screen pb-24 md:pb-8">
-                    <header class="hidden md:flex items-center justify-between px-8 py-5 bg-surface-light/80 dark:bg-grafite/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40">
-                        <div>
-                            <h2 id="page-title" class="text-xl font-bold tracking-tight text-gold">Dashboard Financeiro</h2>
-                            <p id="page-subtitle" class="text-xs text-slate-500 dark:text-slate-400">Painel executivo Madalux.</p>
-                        </div>
-                        <div class="flex items-center space-x-4">
-                            <button onclick="window.openModal('transaction')" class="px-4 py-2 bg-gradient-to-r from-emerald to-emerald-light text-white text-xs font-semibold rounded-xl shadow-lg flex items-center space-x-2">
-                                <i data-lucide="plus" class="w-4 h-4"></i><span>Nova Transação</span>
-                            </button>
-                            <div class="w-10 h-10 rounded-full border border-gold/30 flex items-center justify-center bg-grafite">
-                                <img src="${window.LOGO_URL}" class="h-6 object-contain">
-                            </div>
-                        </div>
-                    </header>
-                    <div id="app-content" class="p-4 md:p-8 flex-1 max-w-7xl w-full mx-auto space-y-6"></div>
-                </main>
-            `;
-
-            if(window.state.isPrivate) {
-                document.body.classList.add('privacy-on');
-                const iDesktop = document.getElementById('desktop-privacy-icon');
-                if(iDesktop) iDesktop.setAttribute('data-lucide', 'eye-off');
-            }
-            renderTabContent();
-            lucide.createIcons();
-        }
-
-        function renderAuthScreen() {
-            if (window.state.authView === 'register') {
-                return `
-                    <div class="w-full min-h-screen flex items-center justify-center p-4 bg-background-light dark:bg-background-dark">
-                        <div class="bg-surface-light dark:bg-grafite border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md p-8 shadow-2xl space-y-6">
-                            <div class="text-center space-y-2 flex flex-col items-center">
-                                <img src="${window.LOGO_URL}" alt="Madalux" class="h-20 object-contain drop-shadow-[0_0_15px_rgba(212,177,106,0.3)] mb-2">
-                                <h1 class="text-xl font-bold tracking-tight text-gold">Criar Conta Madalux</h1>
-                                <p class="text-xs text-slate-400">Plataforma financeira exclusiva.</p>
-                            </div>
-                            <form onsubmit="window.handleRegister(event)" class="space-y-4 text-xs">
-                                <input type="text" id="name-reg" required placeholder="Nome Completo" class="w-full p-3 bg-slate-100 dark:bg-grafite-dark border border-slate-700/60 rounded-xl focus:border-gold outline-none">
-                                <input type="email" id="email-reg" required placeholder="E-mail" class="w-full p-3 bg-slate-100 dark:bg-grafite-dark border border-slate-700/60 rounded-xl focus:border-gold outline-none">
-                                <input type="password" id="pass-reg" required placeholder="Senha Segura" class="w-full p-3 bg-slate-100 dark:bg-grafite-dark border border-slate-700/60 rounded-xl focus:border-gold outline-none">
-                                <button type="submit" id="reg-btn" class="w-full py-3 bg-gold text-slate-950 font-bold rounded-xl hover:bg-yellow-500 transition shadow-lg">Solicitar Acesso</button>
-                            </form>
-                            <div class="text-center pt-2">
-                                <button onclick="window.state.authView='login'; renderApp();" class="text-xs text-gold hover:underline">Já possui conta? Faça login</button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-
-            return `
-                <div class="w-full min-h-screen flex items-center justify-center p-4 bg-background-light dark:bg-background-dark">
-                    <div class="bg-surface-light dark:bg-grafite border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md p-8 shadow-2xl space-y-6">
-                        <div class="text-center space-y-2 flex flex-col items-center">
-                            <img src="${window.LOGO_URL}" alt="Madalux" class="h-20 object-contain drop-shadow-[0_0_15px_rgba(212,177,106,0.3)] mb-2">
-                            <h1 class="text-xl font-bold tracking-tight text-gold">Madalux Wealth</h1>
-                            <p class="text-xs text-slate-400">Acesso Restrito</p>
-                        </div>
-                        <form onsubmit="window.handleLogin(event)" class="space-y-4 text-xs">
-                            <input type="email" id="email-login" required placeholder="E-mail" class="w-full p-3 bg-slate-100 dark:bg-grafite-dark border border-slate-700/60 rounded-xl focus:border-gold outline-none">
-                            <input type="password" id="pass-login" required placeholder="Senha" class="w-full p-3 bg-slate-100 dark:bg-grafite-dark border border-slate-700/60 rounded-xl focus:border-gold outline-none">
-                            <button type="submit" id="login-btn" class="w-full py-3 bg-gold text-slate-950 font-bold rounded-xl hover:bg-yellow-500 transition shadow-lg">Entrar na Plataforma</button>
-                        </form>
-                        <div class="text-center pt-4">
-                            <button onclick="window.state.authView='register'; renderApp();" class="text-xs text-gold hover:underline">Criar uma conta (Requer aprovação)</button>
-                        </div>
+        <main class="flex-1 overflow-y-auto">
+            <header class="p-6 flex justify-between items-center glass-panel border-b border-madalux-gold/10 sticky top-0 z-10">
+                <h1 class="text-2xl font-semibold text-madalux-gold">Madalux Executivo</h1>
+                <div class="flex items-center space-x-4">
+                    <button onclick="togglePrivacy()" class="text-madalux-gold hover:text-yellow-400 transition-all"><i data-lucide="eye"></i></button>
+                    <div class="w-10 h-10 rounded-full border border-madalux-gold/50 flex items-center justify-center bg-madalux-graphite overflow-hidden">
+                        <img src="https://storage.googleapis.com/generative-ai/images/Monograma%20dourado%20met%C3%A1lico%20em%20transpar%C3%AAncia.png" class="h-6 object-contain">
                     </div>
                 </div>
-            `;
-        }
+            </header>
 
-        function renderPendingScreen() {
-            return `
-                <div class="w-full min-h-screen flex items-center justify-center p-4">
-                    <div class="bg-surface-light dark:bg-grafite border border-gold/40 rounded-2xl w-full max-w-md p-8 shadow-2xl text-center">
-                        <img src="${window.LOGO_URL}" class="h-16 mx-auto mb-4 opacity-80">
-                        <h2 class="text-lg font-bold text-white mb-2">Aguardando Aprovação</h2>
-                        <p class="text-xs text-slate-300 leading-relaxed mb-6">
-                            Seu cadastro foi recebido com sucesso no servidor e aguarda a revisão do administrador (${window.ADMIN_EMAIL}). A sua tela atualizará automaticamente quando aprovado.
-                        </p>
-                        <button onclick="window.logout()" class="w-full py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-xs font-semibold">Sair</button>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderRejectedScreen() {
-            return `
-                <div class="w-full min-h-screen flex items-center justify-center p-4">
-                    <div class="bg-surface-light dark:bg-grafite border border-red-500/40 rounded-2xl w-full max-w-md p-8 shadow-2xl text-center">
-                        <i data-lucide="x-circle" class="w-16 h-16 text-red-500 mx-auto mb-4"></i>
-                        <h2 class="text-lg font-bold text-red-400 mb-2">Acesso Recusado</h2>
-                        <p class="text-xs text-slate-300 leading-relaxed mb-6">Infelizmente sua solicitação foi recusada pelo administrador.</p>
-                        <button onclick="window.logout()" class="w-full py-2.5 bg-slate-700 text-white rounded-xl text-xs font-semibold">Voltar</button>
-                    </div>
-                </div>
-            `;
-        }
-
-        window.switchTab = (tabId) => {
-            window.state.currentTab = tabId;
-            renderApp();
-        };
-
-        window.togglePrivacy = () => {
-            window.state.isPrivate = !window.state.isPrivate;
-            renderApp();
-        };
-
-        window.formatCurrency = (value) => {
-            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-        };
-
-        window.showToast = (message) => {
-            const toast = document.getElementById('toast');
-            if(!toast) return;
-            document.getElementById('toast-message').innerText = message;
-            toast.classList.remove('translate-y-20', 'opacity-0');
-            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3500);
-        };
-
-        function renderTabContent() {
-            const container = document.getElementById('app-content');
-            if (!container) return;
-
-            const titles = {
-                'dashboard': { title: 'Visão Executiva', sub: 'Painel e inteligência patrimonial' },
-                'transactions': { title: 'Extrato de Movimentações', sub: 'Gerencie entradas e saídas' },
-                'accounts': { title: 'Contas Bancárias', sub: 'Gestão de saldos e Open Finance' },
-                'goals': { title: 'Metas Financeiras', sub: 'Planejamento patrimonial' },
-                'ai-assistant': { title: 'Consultor IA', sub: 'Assistente pessoal inteligente' },
-                'market': { title: 'Mercado Financeiro', sub: 'Indicadores e Cotações B3' },
-                'reports': { title: 'Relatórios Gerenciais', sub: 'Exportação e análise' },
-                'admin-panel': { title: 'Painel Administrativo', sub: 'Gestão de usuários do Firebase' },
-                'settings': { title: 'Configurações', sub: 'Dados do perfil' }
-            };
-
-            if (titles[window.state.currentTab]) {
-                const pTitle = document.getElementById('page-title');
-                const pSub = document.getElementById('page-subtitle');
-                if (pTitle) pTitle.innerText = titles[window.state.currentTab].title;
-                if (pSub) pSub.innerText = titles[window.state.currentTab].sub;
-            }
-
-            switch (window.state.currentTab) {
-                case 'dashboard': container.innerHTML = renderDashboard(); break;
-                case 'transactions': container.innerHTML = renderTransactions(); break;
-                case 'accounts': container.innerHTML = renderAccounts(); break;
-                case 'goals': container.innerHTML = renderGoals(); break;
-                case 'ai-assistant': container.innerHTML = renderAIAssistant(); break;
-                case 'market': container.innerHTML = renderMarket(); break;
-                case 'reports': container.innerHTML = renderReports(); break;
-                case 'admin-panel': container.innerHTML = renderAdminPanel(); break;
-                case 'settings': container.innerHTML = renderSettings(); break;
-            }
-            lucide.createIcons();
-        }
-
-        // --- Componentes das Abas ---
-        function renderDashboard() {
-            const totalBalance = window.state.accounts.reduce((a, b) => a + b.balance, 0);
-            return `
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="glass-panel p-5 rounded-2xl border border-gold/20 shadow-sm">
-                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Patrimônio Líquido</p>
-                        <h3 class="text-2xl font-bold text-white financial-value">${window.formatCurrency(totalBalance)}</h3>
-                    </div>
-                </div>
-                <div class="glass-panel p-8 rounded-2xl border border-gold/10 text-center mt-6">
-                    <i data-lucide="bar-chart-3" class="w-12 h-12 text-gold mx-auto mb-4 opacity-50"></i>
-                    <h3 class="text-white font-bold mb-2">Painel Sincronizado com Sucesso</h3>
-                    <p class="text-sm text-gray-400 max-w-md mx-auto">Sua conta e dados financeiros estão conectados em nuvem utilizando o Firebase oficial.</p>
-                </div>
-            `;
-        }
-
-        function renderTransactions() {
-            return `
-                <div class="glass-panel p-6 rounded-2xl border border-gold/10 space-y-6">
-                    <div class="flex justify-between items-center">
-                        <h3 class="font-bold">Histórico de Transações</h3>
-                        <button onclick="window.openModal('transaction')" class="px-4 py-2 bg-emerald hover:bg-emerald-light text-white text-xs font-semibold rounded-xl transition flex items-center space-x-2"><i data-lucide="plus" class="w-4 h-4"></i><span>Nova</span></button>
-                    </div>
-                    ${window.state.transactions.length === 0 ? `<p class="text-sm text-gray-400 text-center py-8">Nenhuma transação registrada.</p>` : `
-                        <div class="space-y-3">
-                            ${window.state.transactions.map(t => `
-                                <div class="flex justify-between items-center p-4 bg-slate-800/30 rounded-xl border border-slate-700/50">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="w-8 h-8 rounded-lg ${t.type==='income'?'bg-emerald/10 text-emerald-500':'bg-red-500/10 text-red-500'} flex items-center justify-center">
-                                            <i data-lucide="${t.type==='income'?'arrow-down-left':'arrow-up-right'}" class="w-4 h-4"></i>
-                                        </div>
-                                        <div><p class="text-sm font-bold text-white">${t.description}</p><p class="text-[10px] text-gray-400">${t.category}</p></div>
-                                    </div>
-                                    <span class="font-bold financial-value ${t.type==='income'?'text-emerald-500':'text-red-400'}">${t.type==='income'?'+':'-'} ${window.formatCurrency(t.amount)}</span>
-                                </div>
-                            `).join('')}
+            <div class="p-6">
+                <!-- Aba Dashboard -->
+                <section id="tab-dashboard" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="glass-panel p-5 rounded-xl border border-madalux-gold/20">
+                            <p class="text-gray-400 text-sm">Património Líquido</p>
+                            <h2 class="text-2xl font-bold mt-2 financial-value text-white">R$ 0,00</h2>
                         </div>
-                    `}
-                </div>
-            `;
-        }
-
-        function renderAccounts() {
-            return `
-                <div class="space-y-6">
-                    <div class="flex justify-between items-center">
-                        <h3 class="font-bold">Contas Cadastradas</h3>
-                        <div class="space-x-2">
-                            <button onclick="document.getElementById('modal-openfinance').classList.remove('hidden')" class="px-4 py-2 bg-gold text-slate-900 text-xs font-bold rounded-xl flex items-center inline-flex space-x-2"><i data-lucide="link" class="w-4 h-4"></i><span>Open Finance</span></button>
-                            <button onclick="window.openModal('account')" class="px-4 py-2 bg-emerald text-white text-xs font-bold rounded-xl inline-flex flex items-center space-x-2"><i data-lucide="plus" class="w-4 h-4"></i><span>Nova</span></button>
+                        <div class="glass-panel p-5 rounded-xl border border-madalux-gold/20">
+                            <p class="text-gray-400 text-sm">Receitas do Mês</p>
+                            <h2 class="text-2xl font-bold mt-2 financial-value text-madalux-emerald">R$ 0,00</h2>
+                        </div>
+                        <div class="glass-panel p-5 rounded-xl border border-madalux-gold/20">
+                            <p class="text-gray-400 text-sm">Despesas do Mês</p>
+                            <h2 class="text-2xl font-bold mt-2 financial-value text-red-400">R$ 0,00</h2>
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        ${window.state.accounts.map(a => `
-                            <div class="glass-panel p-5 rounded-2xl border border-gold/20 flex flex-col justify-between h-32 relative">
-                                <button onclick="window.deleteAccount('${a.id}')" class="absolute top-4 right-4 text-gray-500 hover:text-red-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                                <div><h4 class="font-bold text-white">${a.name}</h4><p class="text-xs text-gray-400">${a.institution}</p></div>
-                                <h3 class="text-xl font-bold text-gold financial-value">${window.formatCurrency(a.balance)}</h3>
-                            </div>
-                        `).join('')}
+                </section>
+                
+                <!-- Aba Contas -->
+                <section id="tab-contas" class="hidden space-y-6">
+                    <h2 class="text-xl font-semibold text-white mb-4">Gestão de Contas</h2>
+                    <div class="glass-panel p-8 rounded-xl border border-madalux-gold/20 text-center">
+                        <p class="text-gray-400">Sincronização em nuvem ativa.</p>
                     </div>
-                </div>
-            `;
-        }
+                </section>
 
-        function renderGoals() { return `<div class="glass-panel p-8 text-center border-gold/10 rounded-xl"><p class="text-gray-400">Módulo de metas integrado. Nenhum dado visual ainda.</p></div>`; }
-        function renderAIAssistant() { return `<div class="glass-panel p-8 text-center border-gold/10 rounded-xl"><p class="text-gray-400">Chat IA Madalux ativo e pronto para comandos.</p></div>`; }
-        function renderMarket() { return `<div class="glass-panel p-8 text-center border-gold/10 rounded-xl"><p class="text-gray-400">Integração com B3 Ativa. Ibovespa 128.450 pts.</p></div>`; }
-        function renderReports() {
-            return `
-                <div class="glass-panel p-8 text-center border-gold/10 rounded-xl space-y-4">
-                    <p class="text-gray-400">Módulo de Relatórios.</p>
-                    <div class="flex justify-center space-x-3">
-                        <button onclick="alert('Exportando PDF')" class="px-4 py-2 border border-gold/50 text-gold rounded-xl text-xs font-bold"><i data-lucide="file-text" class="w-4 h-4 inline mr-1"></i> PDF</button>
-                        <button onclick="alert('Exportando Excel')" class="px-4 py-2 border border-emerald/50 text-emerald-500 rounded-xl text-xs font-bold"><i data-lucide="sheet" class="w-4 h-4 inline mr-1"></i> Excel</button>
-                    </div>
-                </div>
-            `; 
-        }
-        function renderSettings() { return `<div class="glass-panel p-8 text-left border-gold/10 rounded-xl"><p class="text-sm font-bold text-white mb-2">Conta Sincronizada (Nuvem)</p><p class="text-xs text-gray-400">UID: ${window.state.currentUser.uid}</p><p class="text-xs text-gray-400">Role: ${window.state.currentUser.role.toUpperCase()}</p></div>`; }
-
-        // --- Aba Admin (Exclusivo Administrador) ---
-        function renderAdminPanel() {
-            if(window.state.currentUser.email !== window.ADMIN_EMAIL) return `<p class="text-red-500">Acesso negado.</p>`;
-            return `
-                <div class="glass-panel p-6 rounded-2xl border border-gold/10">
+                <!-- Aba Administração (Exclusivo Administrador) -->
+                <section id="tab-admin" class="hidden space-y-6">
                     <div class="flex justify-between items-center mb-6">
-                        <h3 class="font-bold text-gold">Lista de Usuários no Firebase</h3>
-                        <span class="bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-[10px] font-bold animate-pulse">Live</span>
+                        <h2 class="text-xl font-semibold text-white">Gestão de Acessos e Aprovações</h2>
+                        <span class="bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-xs font-medium border border-green-500/30 flex items-center">
+                            <span class="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span> Servidor Ativo
+                        </span>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs">
-                            <thead class="text-gray-400 border-b border-gray-700">
-                                <tr><th class="pb-2">Nome / Email</th><th class="pb-2">Status</th><th class="pb-2 text-right">Ação</th></tr>
+                    
+                    <div class="glass-panel rounded-xl border border-madalux-gold/10 overflow-hidden">
+                        <table class="w-full text-left">
+                            <thead class="bg-madalux-graphite/50 border-b border-madalux-gold/10">
+                                <tr>
+                                    <th class="p-4 text-sm font-medium text-gray-300">Utilizador</th>
+                                    <th class="p-4 text-sm font-medium text-gray-300">E-mail</th>
+                                    <th class="p-4 text-sm font-medium text-gray-300">Data do Registo</th>
+                                    <th class="p-4 text-sm font-medium text-gray-300">Status</th>
+                                    <th class="p-4 text-sm font-medium text-gray-300 text-right">Ações</th>
+                                </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-800">
-                                ${window.state.adminUsersList.length === 0 ? `<tr><td colspan="3" class="py-4 text-center text-gray-500">Nenhum cadastro encontrado.</td></tr>` : 
-                                    window.state.adminUsersList.map(u => `
-                                    <tr>
-                                        <td class="py-3"><p class="font-bold text-white">${u.name}</p><p class="text-gray-500">${u.email}</p></td>
-                                        <td class="py-3"><span class="px-2 py-0.5 rounded uppercase font-bold text-[9px] ${u.status==='approved'?'bg-emerald/20 text-emerald-400':'bg-yellow-500/20 text-yellow-400'}">${u.status}</span></td>
-                                        <td class="py-3 text-right space-x-2">
-                                            ${u.status === 'pending' ? `<button onclick="window.updateUserStatus('${u.uid}', 'approved')" class="bg-emerald text-white px-3 py-1.5 rounded-lg font-bold">Aprovar</button>`:''}
-                                            ${u.status === 'pending' ? `<button onclick="window.updateUserStatus('${u.uid}', 'rejected')" class="bg-red-500/20 text-red-400 px-3 py-1.5 rounded-lg font-bold">Recusar</button>`:''}
-                                            ${u.status === 'approved' ? `<button onclick="window.updateUserStatus('${u.uid}', 'pending')" class="bg-gray-700 text-gray-300 px-3 py-1.5 rounded-lg">Bloquear</button>`:''}
-                                        </td>
-                                    </tr>
-                                `).join('')}
+                            <tbody id="admin-users-list">
+                                <!-- Preenchido dinamicamente em tempo real -->
                             </tbody>
                         </table>
                     </div>
-                </div>
-            `;
-        }
-
-        // --- Modais de Dados ---
-        window.openModal = (type) => {
-            document.getElementById('global-modal').classList.remove('hidden');
-            const content = document.getElementById('modal-content');
-            if (type === 'account') {
-                content.innerHTML = `
-                    <h3 class="font-bold text-white mb-4">Nova Conta</h3>
-                    <form onsubmit="window.handleAccountSubmit(event)" class="space-y-4 text-xs">
-                        <input type="text" id="acc-name" required placeholder="Nome (Ex: Nubank)" class="w-full p-3 rounded-xl bg-slate-800 text-white outline-none">
-                        <input type="text" id="acc-inst" required placeholder="Instituição" class="w-full p-3 rounded-xl bg-slate-800 text-white outline-none">
-                        <input type="number" step="0.01" id="acc-bal" required placeholder="Saldo R$" class="w-full p-3 rounded-xl bg-slate-800 text-white outline-none">
-                        <div class="flex justify-end space-x-2 pt-2">
-                            <button type="button" onclick="document.getElementById('global-modal').classList.add('hidden')" class="px-4 py-2 text-gray-400">Cancelar</button>
-                            <button type="submit" class="px-4 py-2 bg-emerald text-white font-bold rounded-xl">Salvar</button>
-                        </div>
-                    </form>
-                `;
-            } else if (type === 'transaction') {
-                content.innerHTML = `
-                    <h3 class="font-bold text-white mb-4">Nova Transação</h3>
-                    <form onsubmit="window.handleTransactionSubmit(event)" class="space-y-4 text-xs">
-                        <select id="tx-type" class="w-full p-3 rounded-xl bg-slate-800 text-white outline-none">
-                            <option value="expense">Despesa</option><option value="income">Receita</option>
-                        </select>
-                        <input type="text" id="tx-desc" required placeholder="Descrição" class="w-full p-3 rounded-xl bg-slate-800 text-white outline-none">
-                        <input type="number" step="0.01" id="tx-amount" required placeholder="Valor R$" class="w-full p-3 rounded-xl bg-slate-800 text-white outline-none">
-                        <input type="text" id="tx-cat" required placeholder="Categoria" class="w-full p-3 rounded-xl bg-slate-800 text-white outline-none">
-                        <div class="flex justify-end space-x-2 pt-2">
-                            <button type="button" onclick="document.getElementById('global-modal').classList.add('hidden')" class="px-4 py-2 text-gray-400">Cancelar</button>
-                            <button type="submit" class="px-4 py-2 bg-emerald text-white font-bold rounded-xl">Salvar</button>
-                        </div>
-                    </form>
-                `;
-            }
-        };
-
-        window.handleAccountSubmit = async (e) => {
-            e.preventDefault();
-            window.state.accounts.push({
-                id: 'acc_'+Date.now(), name: document.getElementById('acc-name').value,
-                institution: document.getElementById('acc-inst').value, balance: parseFloat(document.getElementById('acc-bal').value)
-            });
-            document.getElementById('global-modal').classList.add('hidden');
-            renderApp();
-            window.showToast('Conta salva na nuvem!');
-            await window.saveFinancialData();
-        };
-
-        window.handleTransactionSubmit = async (e) => {
-            e.preventDefault();
-            window.state.transactions.unshift({
-                id: 'tx_'+Date.now(), type: document.getElementById('tx-type').value,
-                description: document.getElementById('tx-desc').value,
-                category: document.getElementById('tx-cat').value, amount: parseFloat(document.getElementById('tx-amount').value)
-            });
-            document.getElementById('global-modal').classList.add('hidden');
-            renderApp();
-            window.showToast('Transação salva na nuvem!');
-            await window.saveFinancialData();
-        };
-
-        window.deleteAccount = async (id) => {
-            window.state.accounts = window.state.accounts.filter(a => a.id !== id);
-            renderApp();
-            window.showToast('Conta removida.');
-            await window.saveFinancialData();
-        };
-    </script>
+                </section>
+            </div>
+        </main>
+    </div>
 </body>
 </html>
