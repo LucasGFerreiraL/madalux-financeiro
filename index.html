@@ -43,22 +43,21 @@
         let app, auth, db;
         let currentUserData = null;
 
-        document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
-            
-            try {
-                app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-                monitorAuthState();
-            } catch (error) {
-                console.error("Erro ao inicializar Firebase", error);
-                alert("Erro ao conectar com o banco de dados.");
-            }
+        // INICIAÇÃO IMEDIATA (Removido o bloqueio DOMContentLoaded)
+        lucide.createIcons();
+        
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            monitorAuthState();
+        } catch (error) {
+            console.error("Erro ao inicializar Firebase", error);
+            alert("Erro ao conectar com o banco de dados.");
+        }
 
-            document.getElementById('login-form').addEventListener('submit', handleLogin);
-            document.getElementById('register-form').addEventListener('submit', handleRegister);
-        });
+        document.getElementById('login-form').addEventListener('submit', handleLogin);
+        document.getElementById('register-form').addEventListener('submit', handleRegister);
 
         async function routeUser(user) {
             const userDocRef = doc(db, "users", user.uid);
@@ -115,7 +114,7 @@
             try {
                 await signInWithEmailAndPassword(auth, document.getElementById('email-login').value, document.getElementById('pass-login').value);
             } catch (error) {
-                alert("Falha no login. Verifique o seu e-mail e palavra-passe.");
+                alert("Falha no login. Verifique se o e-mail e palavra-passe estão corretos.");
                 btn.innerHTML = 'Entrar';
             }
         }
@@ -125,242 +124,4 @@
             const btn = document.getElementById('reg-btn');
             btn.innerHTML = 'A registar...';
             try {
-                const userCredential = await createUserWithEmailAndPassword(auth, document.getElementById('email-reg').value, document.getElementById('pass-reg').value);
-                const user = userCredential.user;
-                
-                await setDoc(doc(db, "users", user.uid), {
-                    uid: user.uid,
-                    name: document.getElementById('name-reg').value,
-                    email: user.email,
-                    status: (user.email === ADMIN_EMAIL) ? "approved" : "pending",
-                    createdAt: new Date().toISOString()
-                });
-            } catch (error) {
-                alert("Erro ao criar conta: O e-mail já existe ou a senha tem menos de 6 caracteres.");
-                btn.innerHTML = 'Solicitar Acesso';
-            }
-        }
-
-        window.logout = () => { signOut(auth); };
-
-        function loadAdminPanelRealtime() {
-            const q = query(collection(db, "users"), orderBy("createdAt", "desc"));
-            onSnapshot(q, (snapshot) => {
-                const tbody = document.getElementById("admin-users-list");
-                if(!tbody) return;
-                tbody.innerHTML = "";
-                
-                snapshot.forEach((docSnap) => {
-                    const user = docSnap.data();
-                    if (user.email === ADMIN_EMAIL) return; 
-                    
-                    const dateStr = new Date(user.createdAt).toLocaleDateString('pt-BR', {hour: '2-digit', minute:'2-digit'});
-                    const tr = document.createElement("tr");
-                    tr.className = "border-b border-madalux-gold/5 hover:bg-madalux-gold/5 transition-all";
-                    tr.innerHTML = `
-                        <td class="p-4 text-sm text-white">${user.name}</td>
-                        <td class="p-4 text-sm text-gray-400">${user.email}</td>
-                        <td class="p-4 text-sm text-gray-500">${dateStr}</td>
-                        <td class="p-4 text-sm">
-                            <span class="px-2 py-1 rounded text-xs font-medium ${user.status === 'approved' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}">
-                                ${user.status.toUpperCase()}
-                            </span>
-                        </td>
-                        <td class="p-4 text-right space-x-2">
-                            ${user.status === 'pending' ? `<button onclick="updateUserStatus('${docSnap.id}', 'approved')" class="bg-madalux-emerald text-white px-3 py-1 rounded text-xs hover:bg-green-600 transition-all">Aprovar</button>` : ''}
-                            ${user.status === 'pending' ? `<button onclick="updateUserStatus('${docSnap.id}', 'rejected')" class="bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1 rounded text-xs hover:bg-red-500 hover:text-white transition-all">Recusar</button>` : ''}
-                            ${user.status === 'approved' ? `<button onclick="updateUserStatus('${docSnap.id}', 'pending')" class="bg-gray-700 text-gray-300 px-3 py-1 rounded text-xs hover:bg-gray-600 transition-all">Bloquear</button>` : ''}
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            });
-        }
-
-        window.updateUserStatus = async (uid, newStatus) => {
-            try {
-                await updateDoc(doc(db, "users", uid), { status: newStatus });
-            } catch (error) {
-                alert("Erro ao atualizar o status.");
-            }
-        };
-
-        function showScreen(screenId) {
-            ['auth-screen', 'pending-screen', 'main-dashboard'].forEach(id => {
-                const el = document.getElementById(id);
-                if(el) el.classList.add('hidden');
-            });
-            const activeEl = document.getElementById(screenId);
-            if(activeEl) activeEl.classList.remove('hidden');
-        }
-
-        window.toggleAuthMode = () => {
-            document.getElementById('login-form-container').classList.toggle('hidden');
-            document.getElementById('register-form-container').classList.toggle('hidden');
-        };
-
-        window.changeTab = (tabId) => {
-            ['dashboard', 'contas', 'admin'].forEach(id => {
-                const el = document.getElementById('tab-' + id);
-                if(el) el.classList.add('hidden');
-            });
-            const activeEl = document.getElementById('tab-' + tabId);
-            if(activeEl) activeEl.classList.remove('hidden');
-        };
-        
-        let isPrivacyOn = false;
-        window.togglePrivacy = () => {
-            isPrivacyOn = !isPrivacyOn;
-            document.body.classList.toggle('privacy-on', isPrivacyOn);
-        };
-    </script>
-
-    <!-- TELA DE LOGIN E CADASTRO -->
-    <div id="auth-screen" class="min-h-screen w-full flex flex-col md:flex-row hidden">
-        <div class="md:w-1/2 flex items-center justify-center p-8 border-r border-madalux-gold/10">
-            <div class="max-w-sm w-full space-y-8 relative z-10">
-                <div class="text-center">
-                    <img src="https://storage.googleapis.com/generative-ai/images/Monograma%20dourado%20met%C3%A1lico%20em%20transpar%C3%AAncia.png" alt="Madalux Logo" class="h-24 mx-auto mb-4 drop-shadow-[0_0_15px_rgba(212,177,106,0.3)]">
-                    <h2 class="text-2xl font-bold text-madalux-gold">Madalux Finanças</h2>
-                    <p class="text-sm text-gray-400 mt-2">Acesso Exclusivo Familiar</p>
-                </div>
-
-                <!-- Formulário de Login -->
-                <div id="login-form-container">
-                    <form id="login-form" class="space-y-4">
-                        <input type="email" id="email-login" required placeholder="E-mail" class="w-full p-4 rounded-xl bg-madalux-graphite border border-madalux-gold/20 text-white focus:outline-none focus:border-madalux-gold transition-colors">
-                        <input type="password" id="pass-login" required placeholder="Palavra-passe" class="w-full p-4 rounded-xl bg-madalux-graphite border border-madalux-gold/20 text-white focus:outline-none focus:border-madalux-gold transition-colors">
-                        <button type="submit" id="login-btn" class="w-full py-4 rounded-xl bg-madalux-gold text-madalux-navy font-bold hover:bg-yellow-500 transition-all">Entrar</button>
-                    </form>
-                    <div class="text-center mt-6">
-                        <p class="text-sm text-gray-400">Novo por aqui? <button onclick="toggleAuthMode()" class="text-madalux-gold hover:underline font-medium">Solicitar Acesso</button></p>
-                    </div>
-                </div>
-
-                <!-- Formulário de Cadastro -->
-                <div id="register-form-container" class="hidden">
-                    <form id="register-form" class="space-y-4">
-                        <input type="text" id="name-reg" required placeholder="Nome Completo" class="w-full p-4 rounded-xl bg-madalux-graphite border border-madalux-gold/20 text-white focus:outline-none focus:border-madalux-gold transition-colors">
-                        <input type="email" id="email-reg" required placeholder="E-mail" class="w-full p-4 rounded-xl bg-madalux-graphite border border-madalux-gold/20 text-white focus:outline-none focus:border-madalux-gold transition-colors">
-                        <input type="password" id="pass-reg" required placeholder="Crie uma Palavra-passe (Min. 6 carateres)" class="w-full p-4 rounded-xl bg-madalux-graphite border border-madalux-gold/20 text-white focus:outline-none focus:border-madalux-gold transition-colors">
-                        <button type="submit" id="reg-btn" class="w-full py-4 rounded-xl border border-madalux-gold text-madalux-gold font-bold hover:bg-madalux-gold hover:text-madalux-navy transition-all">Solicitar Acesso</button>
-                    </form>
-                    <div class="text-center mt-6">
-                        <p class="text-sm text-gray-400">Já tem conta? <button onclick="toggleAuthMode()" class="text-madalux-gold hover:underline font-medium">Voltar ao Login</button></p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="md:w-1/2 bg-[url('https://images.unsplash.com/photo-1600880292203-757bb62b4baf?q=80&w=2070')] bg-cover bg-center hidden md:block">
-            <div class="w-full h-full bg-madalux-navy/80 backdrop-blur-sm"></div>
-        </div>
-    </div>
-
-    <!-- TELA DE AGUARDANDO APROVAÇÃO -->
-    <div id="pending-screen" class="min-h-screen w-full flex items-center justify-center p-6 hidden relative">
-        <div class="glass-panel p-10 rounded-3xl max-w-lg w-full text-center border border-madalux-gold/30 relative z-10">
-            <img src="https://storage.googleapis.com/generative-ai/images/Monograma%20dourado%20met%C3%A1lico%20em%20transpar%C3%AAncia.png" class="h-16 mx-auto mb-6 opacity-70">
-            <i data-lucide="lock" class="w-16 h-16 text-madalux-gold mx-auto mb-6"></i>
-            <h2 class="text-2xl font-bold text-white mb-4">Acesso Pendente</h2>
-            <p class="text-gray-400 mb-8 leading-relaxed">
-                O seu registo foi enviado com sucesso para o servidor e aguarda validação pelo administrador.<br><br>
-                Assim que a conta for aprovada, o acesso será libertado automaticamente.
-            </p>
-            <button onclick="logout()" class="text-sm text-madalux-gold border border-madalux-gold/30 px-6 py-2 rounded-full hover:bg-madalux-gold hover:text-madalux-navy transition-all">Sair</button>
-        </div>
-    </div>
-
-    <!-- TELA PRINCIPAL / DASHBOARD -->
-    <div id="main-dashboard" class="w-full flex h-screen hidden">
-        <aside class="w-64 flex flex-col justify-between glass-panel border-r border-madalux-gold/20">
-            <div>
-                <div class="p-6 flex items-center justify-center border-b border-madalux-gold/10">
-                    <img src="https://storage.googleapis.com/generative-ai/images/Monograma%20dourado%20met%C3%A1lico%20em%20transpar%C3%AAncia.png" class="h-12 object-contain drop-shadow-[0_0_15px_rgba(212,177,106,0.3)]">
-                </div>
-                <nav class="p-4 space-y-2 mt-2">
-                    <button onclick="changeTab('dashboard')" class="w-full flex items-center space-x-3 p-3 rounded-lg text-madalux-gold hover:bg-madalux-gold/10 transition-all text-left">
-                        <i data-lucide="layout-dashboard" class="w-5 h-5"></i><span>Dashboard</span>
-                    </button>
-                    <button onclick="changeTab('contas')" class="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-400 hover:text-madalux-gold hover:bg-madalux-gold/10 transition-all text-left">
-                        <i data-lucide="landmark" class="w-5 h-5"></i><span>Contas</span>
-                    </button>
-                    <button id="admin-menu-btn" onclick="changeTab('admin')" class="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-400 hover:text-madalux-gold hover:bg-madalux-gold/10 transition-all text-left hidden">
-                        <i data-lucide="shield-check" class="w-5 h-5"></i><span>Administração</span>
-                    </button>
-                </nav>
-            </div>
-            <div class="p-4 border-t border-madalux-gold/10">
-                <button onclick="logout()" class="w-full flex items-center justify-center space-x-2 p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all">
-                    <i data-lucide="log-out" class="w-4 h-4"></i><span class="text-sm font-medium">Encerrar Sessão</span>
-                </button>
-            </div>
-        </aside>
-
-        <main class="flex-1 overflow-y-auto">
-            <header class="p-6 flex justify-between items-center glass-panel border-b border-madalux-gold/10 sticky top-0 z-10">
-                <h1 class="text-2xl font-semibold text-madalux-gold">Madalux Executivo</h1>
-                <div class="flex items-center space-x-4">
-                    <button onclick="togglePrivacy()" class="text-madalux-gold hover:text-yellow-400 transition-all"><i data-lucide="eye"></i></button>
-                    <div class="w-10 h-10 rounded-full border border-madalux-gold/50 flex items-center justify-center bg-madalux-graphite overflow-hidden">
-                        <img src="https://storage.googleapis.com/generative-ai/images/Monograma%20dourado%20met%C3%A1lico%20em%20transpar%C3%AAncia.png" class="h-6 object-contain">
-                    </div>
-                </div>
-            </header>
-
-            <div class="p-6">
-                <!-- Aba Dashboard -->
-                <section id="tab-dashboard" class="space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="glass-panel p-5 rounded-xl border border-madalux-gold/20">
-                            <p class="text-gray-400 text-sm">Património Líquido</p>
-                            <h2 class="text-2xl font-bold mt-2 financial-value text-white">R$ 0,00</h2>
-                        </div>
-                        <div class="glass-panel p-5 rounded-xl border border-madalux-gold/20">
-                            <p class="text-gray-400 text-sm">Receitas do Mês</p>
-                            <h2 class="text-2xl font-bold mt-2 financial-value text-madalux-emerald">R$ 0,00</h2>
-                        </div>
-                        <div class="glass-panel p-5 rounded-xl border border-madalux-gold/20">
-                            <p class="text-gray-400 text-sm">Despesas do Mês</p>
-                            <h2 class="text-2xl font-bold mt-2 financial-value text-red-400">R$ 0,00</h2>
-                        </div>
-                    </div>
-                </section>
-                
-                <!-- Aba Contas -->
-                <section id="tab-contas" class="hidden space-y-6">
-                    <h2 class="text-xl font-semibold text-white mb-4">Gestão de Contas</h2>
-                    <div class="glass-panel p-8 rounded-xl border border-madalux-gold/20 text-center">
-                        <p class="text-gray-400">Sincronização em nuvem ativa.</p>
-                    </div>
-                </section>
-
-                <!-- Aba Administração (Exclusivo Administrador) -->
-                <section id="tab-admin" class="hidden space-y-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-xl font-semibold text-white">Gestão de Acessos e Aprovações</h2>
-                        <span class="bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-xs font-medium border border-green-500/30 flex items-center">
-                            <span class="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span> Servidor Ativo
-                        </span>
-                    </div>
-                    
-                    <div class="glass-panel rounded-xl border border-madalux-gold/10 overflow-hidden">
-                        <table class="w-full text-left">
-                            <thead class="bg-madalux-graphite/50 border-b border-madalux-gold/10">
-                                <tr>
-                                    <th class="p-4 text-sm font-medium text-gray-300">Utilizador</th>
-                                    <th class="p-4 text-sm font-medium text-gray-300">E-mail</th>
-                                    <th class="p-4 text-sm font-medium text-gray-300">Data do Registo</th>
-                                    <th class="p-4 text-sm font-medium text-gray-300">Status</th>
-                                    <th class="p-4 text-sm font-medium text-gray-300 text-right">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="admin-users-list">
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-            </div>
-        </main>
-    </div>
-</body>
-</html>
+                const userCredential = await
